@@ -1,7 +1,7 @@
 # DRiM - DUTH RISC-V Machine
 Low-cost 6-stage pipeline of an 32-bit RISC-V processor allowing the dual-issuing of only 16-bit compressed instructions. DRiM can substantially improve instruction throughput and reduce execution times. Additionally, the new processor employs selective register renaming to specifically target the registers used under instruction compression, thereby completely eliminating unnecessary stalls due to name dependencies. Finally, the new design utilizes a partitioned register file that capitalizes on the skewed use of registers to improve energy efficiency through clock gating. The main features of DRiM are summarized :
 
-- Support for “RV32I” Base Integer Instruction Set, “M” Standard Extension for Integer Multiplication and Divisio and “C” Standard Extension for Compressed Instructions
+- Support for “RV32I” Base Integer Instruction Set, “M” Standard Extension for Integer Multiplication and Division and “C” Standard Extension for Compressed Instructions
 - Single fetch for 32-bit instructions and Dual Fetch & Dual Issue for Compressed instructions
 - Selective Register Renaming Scheme
 - Dynamic Branch Prediction
@@ -28,8 +28,7 @@ Low-cost 6-stage pipeline of an 32-bit RISC-V processor allowing the dual-issuin
 - Align to future versions of the RISC-V ISA. Current document version supported is *20191213* of the Unpriviledged ISA manual
 
 ## How to Compile and Simulate
-
-Generating your own executable file and convert it to a memory file suitable for the CPU can be found in director `sim`. Examples (code and precompiled files) are included in the `/sim/examples` directory.
+Generating your own executable file and converting it to a memory file suitable for the CPU can be found in director `sim`. Examples (code and precompiled files) are included in the `/sim/examples` directory.
 
 
 ## Reference
