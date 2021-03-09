@@ -28,7 +28,7 @@ Low-cost 6-stage pipeline of an 32-bit RISC-V processor allowing the dual-issuin
 - Align to future versions of the RISC-V ISA. Current document version supported is *20191213* of the Unpriviledged ISA manual
 
 ## How to Compile and Simulate
-Generating your own executable file and converting it to a memory file suitable for the CPU can be found in director `sim`. Examples (code and precompiled files) are included in the `/sim/examples` directory.
+Instructions for generating your own executable file and converting it to a memory file suitable for the CPU can be found in directory `sim`. Examples (code and precompiled files) are included in the `/sim/examples` directory.
 
 
 ## Reference
