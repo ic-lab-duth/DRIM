@@ -1,0 +1,2 @@
+	assert property (@(posedge clk) disable iff(!rst_n) valid_2 |-> valid_1) else $warning("Issue: Illegal Scenario");
+    assert property (@(posedge clk) disable iff(!rst_n) flush_valid |-> !(valid_1 | valid_2)) else $warning("Issue: Illegal Scenario on flush");

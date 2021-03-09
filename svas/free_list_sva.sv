@@ -1,0 +1,2 @@
+    assert property (@(posedge clk) disable iff(rst) push |-> ready) else $fatal(1, "Pushing on full!");
+    assert property (@(posedge clk) disable iff(rst) pop_1 |-> valid_1) else $fatal(1, "Popping on empty!");
