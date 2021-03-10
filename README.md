@@ -1,4 +1,4 @@
-# DRiM - DUTH RISC-V Machine
+# DRiM - DUTH RISC-V Microprocessor
 Low-cost 6-stage pipeline of an 32-bit RISC-V processor allowing the dual-issuing of only 16-bit compressed instructions. DRiM can substantially improve instruction throughput and reduce execution times. Additionally, the new processor employs selective register renaming to specifically target the registers used under instruction compression, thereby completely eliminating unnecessary stalls due to name dependencies. Finally, the new design utilizes a partitioned register file that capitalizes on the skewed use of registers to improve energy efficiency through clock gating. The main features of DRiM are summarized :
 
 - Support for “RV32I” Base Integer Instruction Set, “M” Standard Extension for Integer Multiplication and Division and “C” Standard Extension for Compressed Instructions
