@@ -22,14 +22,14 @@ module cache_top #(
   input logic clk,
   input logic resetn,
 
-  // instruction cache
+  // processor / instruction cache interface
   input  logic [ADDR_BITS-1:0]  icache_current_pc,
   output logic                  icache_hit_icache, 
   output logic                  icache_miss_icache, 
   output logic                  icache_half_fetch,
-  output logic [ISTR_DW-1:0] 		icache_instruction_out,
+  output logic [ISTR_DW-1:0]    icache_instruction_out,
 
-  // data cache
+  // processor / data cache inteface
   input  logic                  dcache_output_used,
 
   input  logic                  dcache_load_valid,
@@ -47,20 +47,20 @@ module cache_top #(
   output logic                  dcache_blocked,
   output ex_update              dcache_served_output,
 
-  // icache
-  output logic                  valid_o,
+  // icache / L2 interface
+  output logic                  valid_out,
   input  logic                  ready_in,
   output logic [ADDR_BITS-1:0]  address_out,
   input  logic [ IC_DW-1:0]     data_in,
 
-  //Request Write Port to L2
+  // Request Write Port to L2
   output logic                  write_l2_valid,
   output logic [ADDR_BITS-1:0]  write_l2_addr,
   output logic [DC_DW-1 : 0]    write_l2_data,
-  //Request Read Port to L2
+  // Request Read Port to L2
   output logic                  request_l2_valid,
   output logic [ADDR_BITS-1:0]  request_l2_addr,
-  //Update Port from L2
+  // Update Port from L2
   input  logic                  update_l2_valid,
   input  logic [ADDR_BITS-1:0]  update_l2_addr,
   input  logic [DC_DW-1 : 0]    update_l2_data,
@@ -260,7 +260,7 @@ generate
       .nat_update_data      (ic_nat_to_axi_upd_data)
     );
 
-    incr_axi_master # (
+    AXI4_master # (
       .LS_DATA_WIDTH    (IC_DW),
       .ADDR_WIDTH       (ADDR_BITS),
       .DATA_WIDTH       (AXI_DW),
@@ -335,7 +335,7 @@ generate
       .nat_update_data      (dc_nat_to_axi_upd_data)
     );
 
-    incr_axi_master # (
+    AXI4_master # (
       .LS_DATA_WIDTH        (256),
       .ADDR_WIDTH           (32),
       .DATA_WIDTH           (32),

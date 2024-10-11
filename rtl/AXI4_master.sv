@@ -1,43 +1,13 @@
-/*
-    Sub-modules: fifo.sv
-*/
-
 //! During a write transaction, the master holds the required signals with the information for the transaction.
 //! When the AWVALID-AWREADY handshake happens, it starts sending the data until it sents the last transfer of the transaction.
 //! After that, it waits for the BRESP signal that informs the master whether or not the transaction was successful.
 //! This master has to wait until it gets a response for the latest write transaction to initialize another request.
-//! The following is a diagram for an 8 length write transaction.
-//! {signal: [
-  //!   {wave: '9.................', data: "Write-Transaction"},
-//!   {name: 'aclk', wave: 'p.................'},
-//!   {name: 'AWVALID', wave: 'l.hl..............'},
-//!   {name: 'AWREADY', wave: 'h..l..............'},
-//!   {name: 'WVALID', wave: 'l..h.......l......'},
-//!   {name: 'WREADY', wave: 'h..........l......'},
-//!   {name: 'WDATA', wave: 'x..66666666.x.....', data: ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"]},
-//!   {name: 'WLAST', wave: 'l.........hl......'},
-//!   {name: 'BVALID', wave: 'l............h.l..'},
-//!   {name: 'BREADY', wave: 'l.............hl..'},
-//!   {name: 'BRESP', wave: 'x............7.x..', data: "RESP"},
-//! ]}
-//! The same is true for the read transactions. There cannot be two read transaction at the same time.
-//! The following is a diagram for an 8 length read transaction.
-//! {signal: [
-  //!   {wave: '9.................', data: "Read-Transaction"},
-//!   {name: 'aclk', wave: 'p.................'},
-//!   {name: 'ARVALID', wave: 'l....hl...........'},
-//!   {name: 'ARREADY', wave: 'h.....l...........'},
-//!   {name: 'RVALID', wave: 'l.......h.......l.'},
-//!   {name: 'RREADY', wave: 'lh................'},
-//!   {name: 'RDATA', wave: 'x.......66666666..', data: ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"]},
-//!   {name: 'RLAST', wave: 'l..............hl.'},
-//! ]}
 
 typedef enum logic [1:0] {FIXED, INCR, WRAP, NOOP} burst_type;
 
 //! @title Simple valid.ready to AXI4 Master
 //! @author Giorgos Pelekidis
-module incr_axi_master #(
+module AXI4_master #(
   parameter ID_SEL        = 0,    //! Master's ID
   parameter ID_WIDTH      = 4,    //! Number of Transaction ID bits
   parameter ADDR_WIDTH    = 32,   //! Number of Address bits  
