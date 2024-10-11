@@ -161,68 +161,118 @@ module module_top (
     //////////////////////////////////////////////////
     //                Caches' Subsection            //
     //////////////////////////////////////////////////
-    icache #(
-        .ADDRESS_BITS (ADDR_BITS ),
-        .ENTRIES      (IC_ENTRIES),
-        .ASSOCIATIVITY(2         ),
-        .BLOCK_WIDTH  (IC_DW     ),
-        .INSTR_BITS   (ISTR_DW   )
-    ) icache (
-        .clk            (clk             ),
-        .rst_n          (rst_n           ),
+    cache_top # (
+        .ADDR_BITS(ADDR_BITS),
+        .ISTR_DW(ISTR_DW),
+        .DATA_WIDTH(DATA_WIDTH),
+        .R_WIDTH(R_WIDTH),
+        .MICROOP_W(MICROOP_W),
+        .ROB_ENTRIES(ROB_ENTRIES),
+        .IC_ENTRIES(IC_ENTRIES),
+        .DC_ENTRIES(DC_ENTRIES),
+        .IC_DW(IC_DW),
+        .DC_DW(DC_DW),
+        .USE_AXI(0)
+    ) caches_top (
+        .clk(clk),
+        .resetn(resetn),
 
-        .address        (current_pc      ),
-        .hit            (hit_icache      ),
-        .miss           (miss_icache     ),
-        .half_access    (half_fetch      ),
-        .instruction_out(fetched_data    ),
+        .icache_current_pc      (current_pc),
+        .icache_hit_icache      (hit_icache),
+        .icache_miss_icache     (miss_icache),
+        .icache_half_fetch      (half_fetch),
+        .icache_instruction_out (fetched_data),
 
-        .valid_o        (icache_valid_i  ),
-        .ready_in       (icache_valid_o  ),
-        .address_out    (icache_address_i),
-        .data_in        (icache_data_o   )
-    );
-    //----------------------------------------------
-    data_cache #(
-        .DATA_WIDTH   (DATA_WIDTH  ),
-        .ADDR_BITS    (ADDR_BITS   ),
-        .R_WIDTH      (R_WIDTH     ),
-        .MICROOP      (MICROOP_W   ),
-        .ROB_TICKET   (ROB_TICKET_W),
-        .ENTRIES      (DC_ENTRIES  ),
-        .BLOCK_WIDTH  (DC_DW       ),
-        .BUFFER_SIZES (4           ),
-        .ASSOCIATIVITY(4           )
-    ) data_cache (
-        .clk             (clk                ),
-        .rst_n           (rst_n              ),
-        .output_used     (ld_st_output_used  ),
-        //Load Input Port
-        .load_valid      (cache_load_valid   ),
-        .load_address    (cache_load_addr    ),
-        .load_dest       (cache_load_dest    ),
-        .load_microop    (cache_load_microop ),
-        .load_ticket     (cache_load_ticket  ),
-        //Store Input Port
-        .store_valid     (cache_store_cached ),
-        .store_address   (cache_store_addr   ),
-        .store_data      (cache_store_data   ),
-        .store_microop   (cache_store_microop),
+        .dcache_output_used     (ld_st_output_used),
+        .dcache_load_valid      (cache_load_valid),
+        .dcache_load_address    (cache_load_addr),
+        .dcache_load_dest       (cache_load_dest),
+        .dcache_load_microop    (cache_load_microop),
+        .dcache_load_ticket     (cache_load_ticket),
+        .dcache_store_valid     (cache_store_valid),
+        .dcache_store_address   (cache_store_addr),
+        .dcache_store_data      (cache_store_data),
+        .dcache_store_microop   (cache_store_microop),
+        .dcache_will_block      (cache_will_block),
+        .dcache_blocked         (cache_blocked),
+        .dcache_served_output   (cache_fu_update),
+
+        // icache
+        .valid_o                (icache_valid_i),
+        .ready_in               (icache_valid_o),
+        .address_out            (icache_address_i),
+        .data_in                (icache_data_o),
         //Request Write Port to L2
-        .write_l2_valid  (write_l2_valid_c   ),
-        .write_l2_addr   (write_l2_addr_c    ),
-        .write_l2_data   (write_l2_data_c    ),
+        .write_l2_valid         (write_l2_valid),
+        .write_l2_addr          (write_l2_addr),
+        .write_l2_data          (write_l2_data),
         //Request Read Port to L2
-        .request_l2_valid(dcache_valid_i     ),
-        .request_l2_addr (dcache_address_i   ),
-        // Update Port from L2
-        .update_l2_valid (dcache_valid_o     ),
-        .update_l2_addr  (dcache_address_o   ),
-        .update_l2_data  (dcache_data_o      ),
-        //Output Port
-        .cache_will_block(cache_will_block   ),
-        .cache_blocked   (cache_blocked      ),
-        .served_output   (cache_fu_update    )
+        .request_l2_valid       (dcache_valid_i),
+        .request_l2_addr        (dcache_address_i),
+        //Update Port from L2
+        .update_l2_valid        (dcache_valid_o),
+        .update_l2_addr         (dcache_address_o),
+        .update_l2_data         (dcache_data_o)
+
+        // .ic_axi_awvalid         (ic_AXI_AWVALID),
+        // .ic_axi_awready         (ic_AXI_AWREADY),
+        // .ic_axi_awaddr          (ic_AXI_AWADDR),
+        // .ic_axi_awburst         (ic_AXI_AWBURST),
+        // .ic_axi_awlen           (ic_AXI_AWLEN),
+        // .ic_axi_awsize          (ic_AXI_AWSIZE),
+        // .ic_axi_awid            (ic_AXI_AWID),
+        // .ic_axi_wvalid          (ic_AXI_WVALID),
+        // .ic_axi_wready          (ic_AXI_WREADY),
+        // .ic_axi_wdata           (ic_AXI_WDATA),
+        // .ic_axi_wlast           (ic_AXI_WLAST),
+        // .ic_axi_wstrb           (ic_AXI_WSTRB),
+        // .ic_axi_bid             (ic_AXI_BID),
+        // .ic_axi_bresp           (ic_AXI_BRESP),
+        // .ic_axi_bvalid          (ic_AXI_BVALID),
+        // .ic_axi_bready          (ic_AXI_BREADY),
+        // .ic_axi_arready         (ic_AXI_ARREADY),
+        // .ic_axi_arvalid         (ic_AXI_ARVALID),
+        // .ic_axi_araddr          (ic_AXI_ARADDR),
+        // .ic_axi_arburst         (ic_AXI_ARBURST),
+        // .ic_axi_arlen           (ic_AXI_ARLEN),
+        // .ic_axi_arsize          (ic_AXI_ARSIZE),
+        // .ic_axi_arid            (ic_AXI_ARID),
+        // .ic_axi_rdata           (ic_AXI_RDATA),
+        // .ic_axi_rlast           (ic_AXI_RLAST),
+        // .ic_axi_rid             (ic_AXI_RID),
+        // .ic_axi_rresp           (ic_AXI_RRESP),
+        // .ic_axi_rvalid          (ic_AXI_RVALID),
+        // .ic_axi_rready          (ic_AXI_RREADY),
+
+        // .dc_axi_awvalid         (dc_AXI_AWVALID),
+        // .dc_axi_awready         (dc_AXI_AWREADY),
+        // .dc_axi_awaddr          (dc_AXI_AWADDR),
+        // .dc_axi_awburst         (dc_AXI_AWBURST),
+        // .dc_axi_awlen           (dc_AXI_AWLEN),
+        // .dc_axi_awsize          (dc_AXI_AWSIZE),
+        // .dc_axi_awid            (dc_AXI_AWID),
+        // .dc_axi_wvalid          (dc_AXI_WVALID),
+        // .dc_axi_wready          (dc_AXI_WREADY),
+        // .dc_axi_wdata           (dc_AXI_WDATA),
+        // .dc_axi_wlast           (dc_AXI_WLAST),
+        // .dc_axi_wstrb           (dc_AXI_WSTRB),
+        // .dc_axi_bid             (dc_AXI_BID),
+        // .dc_axi_bresp           (dc_AXI_BRESP),
+        // .dc_axi_bvalid          (dc_AXI_BVALID),
+        // .dc_axi_bready          (dc_AXI_BREADY),
+        // .dc_axi_arready         (dc_AXI_ARREADY),
+        // .dc_axi_arvalid         (dc_AXI_ARVALID),
+        // .dc_axi_araddr          (dc_AXI_ARADDR),
+        // .dc_axi_arburst         (dc_AXI_ARBURST),
+        // .dc_axi_arlen           (dc_AXI_ARLEN),
+        // .dc_axi_arsize          (dc_AXI_ARSIZE),
+        // .dc_axi_arid            (dc_AXI_ARID),
+        // .dc_axi_rdata           (dc_AXI_RDATA),
+        // .dc_axi_rlast           (dc_AXI_RLAST),
+        // .dc_axi_rid             (dc_AXI_RID),
+        // .dc_axi_rresp           (dc_AXI_RRESP),
+        // .dc_axi_rvalid          (dc_AXI_RVALID),
+        // .dc_axi_rready          (dc_AXI_RREADY)
     );
 
     //=====================================================================
