@@ -113,7 +113,7 @@ module data_cache #(
     assign request_l2_addr  = served_address;
     //Create the Write Requests towards the L2
     assign write_l2_valid = update_l2_valid & all_valid & dirty[lru_way][write_line_select];
-    assign write_l2_addr  = {overwritten_tag[lru_way],write_line_select};
+    assign write_l2_addr  = {overwritten_tag[lru_way],write_line_select,{OFFSET_BITS{1'b0}}};
     assign write_l2_data  = overwritten_data[lru_way];
 
     assign cache_will_block = wt_invalidate;
