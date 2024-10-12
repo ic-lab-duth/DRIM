@@ -317,7 +317,7 @@ generate
       .resetn               (resetn),
       // cache side
       .cache_write_valid    (dc_to_nat_store_valid),
-      .cache_write_addr     ({dc_to_nat_store_addr[26:0], 5'b0}),
+      .cache_write_addr     (dc_to_nat_store_addr),
       .cache_write_data     (dc_to_nat_store_data),
       .cache_read_valid     (dc_to_nat_load_valid),
       .cache_read_addr      (dc_to_nat_load_addr),
