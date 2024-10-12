@@ -108,6 +108,18 @@ module main_memory #(
             input_entry_2.read_dcache = 0;
             input_entry_2.write_dcache = 0;
             input_entry_2.address = dcache_address_wr;
+            if(dcache_valid_i && dcache_valid_wr) begin
+                push_1 = 1;
+                input_entry_1.read_icache = 0;
+                input_entry_1.read_dcache = 1;
+                input_entry_1.write_dcache = 0;
+                input_entry_1.address = dcache_address_i;
+                push_2 = 1;
+                input_entry_2.read_icache = 0;
+                input_entry_2.read_dcache = 0;
+                input_entry_2.write_dcache = 1;
+                input_entry_2.address = dcache_address_wr;
+            end
             if(dcache_valid_i) begin
                 push_1 = 1;
                 input_entry_1.read_icache = 0;

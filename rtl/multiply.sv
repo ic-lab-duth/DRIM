@@ -47,10 +47,10 @@ module multiply #(parameter DATA_SIZE=32) (
 		//Create the result
 		result_i <= extended_1+extended_2+extended_3+extended_4;
 	end    
-    assign extended_1 = {24*{1'b0},part_1};
-    assign extended_2 = {16*{1'b0},part_2,8*{1'b0}};
-    assign extended_3 = {8*{1'b0},part_3,16*{1'b0}};
-    assign extended_4 = {part_4,24*{1'b0}};
+    assign extended_1 = {24'b0,part_1};
+    assign extended_2 = {16'b0,part_2,8'b0};
+    assign extended_3 = {8'b0,part_3,16'b0};
+    assign extended_4 = {part_4,24'b0};
     //Create the result
     // assign result_i = extended_1+extended_2+extended_3+extended_4;
 	//Create the Output
