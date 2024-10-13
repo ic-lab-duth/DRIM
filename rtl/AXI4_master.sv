@@ -87,25 +87,18 @@ integer i1, i2, i3; //! Loop counter.
 //    Signal definition   //
 ////////////////////////////
 
-// structs
 //! AW-channel control signals.
-struct {
-  logic                   pending;
-  logic [ADDR_WIDTH-1:0]  addr;
-  logic                   valid;
-} aw;
+logic                   awpending;
+logic [ADDR_WIDTH-1:0]  awaddr;
+logic                   awvalid;
 //! W-channel control signals.
-struct { 
-  logic [DATA_WIDTH-1:0] data ;
-  logic                  valid;
-  logic [NBYTES-1    :0] strb ;
-} w;
+logic [DATA_WIDTH-1:0]  wdata ;
+logic                   wvalid;
+logic [NBYTES-1    :0]  wstrb ;
 //! AR-channel control signals.
-struct {
-  logic                   pending;
-  logic [ADDR_WIDTH-1:0]  addr;
-  logic                   valid;
-} ar;
+logic                   arpending;
+logic [ADDR_WIDTH-1:0]  araddr;
+logic                   arvalid;
 
 // AXI related signals
 burst_type            burst;  //! Shared Burst type-signal assigned to both AW-channel and AR-channel.
@@ -159,7 +152,7 @@ end
 always_ff @( posedge aclk ) begin : Update_write_data_buffer  //! - Checks if the next entry in the Request-fifo is a write request and then it updates the write_data_buffer.
   if (!aresetn) 
     write_data_buffer <= '{default:0};
-  else if (req_fifo_out[1:0] == 2'b10 && req_valid && !aw.pending)
+  else if (req_fifo_out[1:0] == 2'b10 && req_valid && !awpending)
     for (i1=0; i1<NTRANSF; i1++)
       write_data_buffer[i1] <= req_fifo_out[(i1*DATA_WIDTH)+ADDR_WIDTH+2+:32];
 end
@@ -239,57 +232,57 @@ fifo_duth # (
 ////////////////////////////
 
 // WRITE REQUEST CHANNEL
-//! - When **aw.pending** is HIGH, a transaction is taking place.
-//! - **aw.addr** holds the address of each transaction and gets assigned to **AWADDR**.
-//! - When the next entry in the **request-fifo** is a write request and there is no other transaction taking place, the **aw.pending** signal is raised and the **aw.addr** signal gets updated with the new write transaction address.
-//! When the **WLAST** signal is raised to indicate the last transfer of the transaction, the **aw.pending** signal drops to 0.
+//! - When **awpending** is HIGH, a transaction is taking place.
+//! - **awaddr** holds the address of each transaction and gets assigned to **AWADDR**.
+//! - When the next entry in the **request-fifo** is a write request and there is no other transaction taking place, the **awpending** signal is raised and the **awaddr** signal gets updated with the new write transaction address.
+//! When the **WLAST** signal is raised to indicate the last transfer of the transaction, the **awpending** signal drops to 0.
 always_ff @(posedge aclk) begin : awpending_and_awaddr_control 
   if (!aresetn) begin
-    aw.pending <= 0;
-    aw.addr    <= 0;
-  end else if (req_valid && req_fifo_out[1:0]==2'b10 || aw.pending) begin
-    aw.pending <= (BVALID && BREADY) ? 0 : 1;
-    aw.addr    <= req_fifo_out[ADDR_WIDTH+1:2];
+    awpending <= 0;
+    awaddr    <= 0;
+  end else if (req_valid && req_fifo_out[1:0]==2'b10 || awpending) begin
+    awpending <= (BVALID && BREADY) ? 0 : 1;
+    awaddr    <= req_fifo_out[ADDR_WIDTH+1:2];
   end
 end
 
-//! - The **aw.valid** signal gets assigned to **AWVALID**.
-//! - When the next entry in the **request-fifo** is a write request and there is no other pending write transaction, the **aw.valid** signal gets raised.
+//! - The **awvalid** signal gets assigned to **AWVALID**.
+//! - When the next entry in the **request-fifo** is a write request and there is no other pending write transaction, the **awvalid** signal gets raised.
 always_ff @( posedge aclk ) begin : awvalid_control
   if (!aresetn)                                            
-    aw.valid <= 0;
+    awvalid <= 0;
   else if (AWVALID && AWREADY)                                  
-    aw.valid <= 0;
-  else if (req_valid && req_fifo_out[1:0]==2'b10 && !aw.pending && ret_ready)
-    aw.valid <= 1;
+    awvalid <= 0;
+  else if (req_valid && req_fifo_out[1:0]==2'b10 && !awpending && ret_ready)
+    awvalid <= 1;
 end
 
 assign AWID     = id_sel;
-assign AWADDR   = aw.addr;
+assign AWADDR   = awaddr;
 assign AWLEN    = len;
 assign AWSIZE   = size;
 assign AWBURST  = burst;
-assign AWVALID  = aw.valid;
+assign AWVALID  = awvalid;
 
 
 // WRITE DATA CHANNEL
-//! - The **w.valid** signal gets assigned to **WVALID**.
+//! - The **wvalid** signal gets assigned to **WVALID**.
 //! - It gets raised when a **AWVALID**-**AWREADY** handshake takes place and drops when the last transfer of the transaction is writen.
 always_ff @( posedge aclk ) begin : wvalid_control
-  if (!aresetn) w.valid <= 0;
-  else if (WVALID && WREADY && WLAST) w.valid <= 0;
-  else if (AWVALID && AWREADY)        w.valid <= 1;
-  else if (aw.pending)                w.valid <= w.valid;
+  if (!aresetn) wvalid <= 0;
+  else if (WVALID && WREADY && WLAST) wvalid <= 0;
+  else if (AWVALID && AWREADY)        wvalid <= 1;
+  else if (awpending)                wvalid <= wvalid;
 end
 //! - Initialize **wstrb** with.
 always_comb begin 
-  for (i2=0; i2<NBYTES; i2++) begin w.strb[i2] = 1; end
+  for (i2=0; i2<NBYTES; i2++) begin wstrb[i2] = 1; end
 end
-assign w.data = write_data_buffer[write_index];
+assign wdata = write_data_buffer[write_index];
 
-assign WVALID   = w.valid;
-assign WDATA    = w.data;
-assign WSTRB    = w.strb;
+assign WVALID   = wvalid;
+assign WDATA    = wdata;
+assign WSTRB    = wstrb;
 assign WLAST    = (write_index == len);
 
 
@@ -303,40 +296,40 @@ end
 
 
 // READ REQUEST CHANNEL
-//! - When **ar.pending** is HIGH, a transaction is taking place.
-//! - **ar.addr** holds the address of each transaction and gets assigned to ARADDR.
-//! - When the next entry in the Request-fifo is a read request and there is no other transaction taking place, the ar.pending signal is raised and the ar.addr signal gets updated with the new read transaction address.
-//! When the RLAST signal is raised to indicate the last transfer of the transaction, the ar.pending signal drops to 0.
+//! - When **arpending** is HIGH, a transaction is taking place.
+//! - **araddr** holds the address of each transaction and gets assigned to ARADDR.
+//! - When the next entry in the Request-fifo is a read request and there is no other transaction taking place, the arpending signal is raised and the araddr signal gets updated with the new read transaction address.
+//! When the RLAST signal is raised to indicate the last transfer of the transaction, the arpending signal drops to 0.
 always_ff @(posedge aclk) begin : arpending_and_araddr_control
   if (!aresetn) begin
-    ar.pending <= 0;
-    ar.addr    <= 0;
-  end else if (req_valid && req_fifo_out[1:0]==2'b01 || ar.pending) begin
-    ar.pending <= (RVALID && RREADY && RLAST) ? 0 : 1;
-    ar.addr    <= req_fifo_out[ADDR_WIDTH+1:2];
+    arpending <= 0;
+    araddr    <= 0;
+  end else if (req_valid && req_fifo_out[1:0]==2'b01 || a.pending) begin
+    arpending <= (RVALID && RREADY && RLAST) ? 0 : 1;
+    araddr    <= req_fifo_out[ADDR_WIDTH+1:2];
   end else begin
-    ar.pending <= 0;
-    ar.addr    <= 0;
+    arpending <= 0;
+    araddr    <= 0;
   end
 end
 
-//! - The **ar.valid** signal gets assigned to ARVALID.
-//! - When the next entry in the Request-fifo is a read request and there is no other pending read transaction, the **ar.valid** signal gets raised.
+//! - The **arvalid** signal gets assigned to ARVALID.
+//! - When the next entry in the Request-fifo is a read request and there is no other pending read transaction, the **arvalid** signal gets raised.
 always_ff @( posedge aclk ) begin : arvalid_control
   if (!aresetn)
-    ar.valid <= 0;
+    arvalid <= 0;
   else if (ARVALID && ARREADY)                                  
-    ar.valid <= 0;
-  else if (req_valid && req_fifo_out[1:0]==2'b01 && !ar.pending && ret_ready)
-    ar.valid <= 1;
+    arvalid <= 0;
+  else if (req_valid && req_fifo_out[1:0]==2'b01 && !arpending && ret_ready)
+    arvalid <= 1;
 end
 
 assign ARID     = id_sel;
-assign ARADDR   = ar.addr;
+assign ARADDR   = araddr;
 assign ARLEN    = len;
 assign ARSIZE   = size;
 assign ARBURST  = burst;
-assign ARVALID  = ar.valid;
+assign ARVALID  = arvalid;
 
 
 // READ DATA CHANNEL
