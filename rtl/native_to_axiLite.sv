@@ -45,67 +45,67 @@ module native_to_axiLite # (
 );
 
 
-  logic o_full, o_empty, o_pop;
+  logic o_ready, o_valid, o_pop;
   logic [1:0] o_data_in, o_data_out;
-  logic w_full, w_empty, w_pop;
+  logic w_ready, w_valid, w_pop;
   logic [DATA_WIDTH+ADDR_BITS-1:0] w_data_out;
-  logic r_full, r_empty, r_pop;
+  logic r_ready, r_valid, r_pop;
   logic [ADDR_BITS-1:0] r_data_out;
   logic pend;
-  logic reg_full, reg_empty, reg_pop;
+  logic reg_ready, reg_valid, reg_pop;
   logic [R_WIDTH+MICROOP_W+ROB_TICKET_W-1:0] reg_data_out;
-  logic ret_full, ret_empty, ret_pop;
+  logic ret_ready, ret_valid, ret_pop;
   logic [DATA_WIDTH-1:0] ret_data_out;
 
 
   assign o_data_in = (write_valid) ? 'd1 : (read_valid) ? 'd2 : 0;
   assign o_pop = w_pop | r_pop;
 
-   fifo # (
-    .DATA_WIDTH(2),
+   fifo_duth # (
+    .DW(2),
     .DEPTH(8)
    ) order_fifo (
     .clk      (clk        ),
-    .resetn   (resetn     ),
-    .data_in  (o_data_in  ),
+    .rst      (!resetn    ),
+    .push_data(o_data_in  ),
     .push     (write_valid | read_valid),
-    .full     (o_full     ),
-    .data_out (o_data_out ),
-    .empty    (o_empty    ),
+    .ready    (o_ready    ),
+    .pop_data (o_data_out ),
+    .valid    (o_valid    ),
     .pop      (o_pop      )
   );
 
 
   assign w_pop = axi_awvalid & axi_awready;
 
-  fifo # (
-    .DATA_WIDTH(DATA_WIDTH+ADDR_BITS),
+  fifo_duth # (
+    .DW(DATA_WIDTH+ADDR_BITS),
     .DEPTH(4)
   ) write_fifo (
     .clk      (clk             ),
-    .resetn   (resetn          ),
-    .data_in  ({w_data, w_addr}),
+    .rst      (!resetn         ),
+    .push_data({w_data, w_addr}),
     .push     (write_valid     ),
-    .full     (w_full          ),
-    .data_out (w_data_out      ),
-    .empty    (w_empty         ),
+    .ready    (w_ready         ),
+    .pop_data (w_data_out      ),
+    .valid    (w_valid         ),
     .pop      (w_pop           )
   );
 
 
   assign r_pop = axi_arvalid & axi_arready;
 
-  fifo # (
-    .DATA_WIDTH(ADDR_BITS),
+  fifo_duth # (
+    .DW(ADDR_BITS),
     .DEPTH(4)
   ) read_a_fifo (
     .clk      (clk        ),
-    .resetn   (resetn     ),
-    .data_in  (r_addr     ),
+    .rst      (!resetn    ),
+    .push_data(r_addr     ),
     .push     (read_valid ),
-    .full     (r_full     ),
-    .data_out (r_data_out ),
-    .empty    (r_empty    ),
+    .ready    (r_ready    ),
+    .pop_data (r_data_out ),
+    .valid    (r_valid    ),
     .pop      (r_pop      )
   );
   
@@ -114,7 +114,7 @@ module native_to_axiLite # (
       axi_arvalid <= 0;
     end else if (axi_arvalid && axi_arready) begin
       axi_arvalid <= 0;
-    end else if (!r_empty && !pend && o_data_out == 'd2) begin
+    end else if (r_valid && !pend && o_data_out == 'd2) begin
       axi_arvalid <= 1;
     end
   end
@@ -130,43 +130,43 @@ module native_to_axiLite # (
   end
 
 
-  assign reg_pop = ~ret_empty;
+  assign reg_pop = ret_valid;
 
-  fifo # (
-    .DATA_WIDTH(R_WIDTH+MICROOP_W+ROB_TICKET_W),
+  fifo_duth # (
+    .DW(R_WIDTH+MICROOP_W+ROB_TICKET_W),
     .DEPTH(4)
   ) read_reg_fifo (
     .clk      (clk          ),
-    .resetn   (resetn       ),
-    .data_in  ({r_dest, r_microop, r_ticket}),
+    .rst      (!resetn      ),
+    .push_data({r_dest, r_microop, r_ticket}),
     .push     (read_valid   ),
-    .full     (reg_full     ),
-    .data_out (reg_data_out ),
-    .empty    (reg_empty    ),
+    .ready    (reg_ready    ),
+    .pop_data (reg_data_out ),
+    .valid    (reg_valid    ),
     .pop      (reg_pop      )
   );
 
-  assign ret_pop = ~ret_empty;
+  assign ret_pop = ret_valid;
 
-  fifo # (
-    .DATA_WIDTH(DATA_WIDTH),
+  fifo_duth # (
+    .DW(DATA_WIDTH),
     .DEPTH(4)
   ) return_fifo (
     .clk      (clk        ),
-    .resetn   (resetn     ),
-    .data_in  (axi_rdata  ),
+    .rst      (!resetn    ),
+    .push_data(axi_rdata  ),
     .push     (axi_rvalid && axi_rready),
-    .full     (ret_full     ),
-    .data_out (ret_data_out ),
-    .empty    (ret_empty    ),
+    .ready    (ret_ready    ),
+    .pop_data (ret_data_out ),
+    .valid    (ret_valid    ),
     .pop      (ret_pop      )
   );
 
 
   
-  assign axi_awvalid = ~w_empty & o_data_out == 'd1;
+  assign axi_awvalid = w_valid & o_data_out == 'd1;
   assign axi_awaddr  = w_data_out[ADDR_BITS-1:0];
-  assign axi_wvalid  = ~w_empty & o_data_out == 'd1;
+  assign axi_wvalid  = w_valid & o_data_out == 'd1;
   assign axi_wdata   = w_data_out[DATA_WIDTH+ADDR_BITS-1:ADDR_BITS];
   assign axi_bready  = 1;
   assign axi_araddr  = r_data_out;

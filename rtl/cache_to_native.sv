@@ -28,12 +28,12 @@ module cache_to_native #(
 
 // FIFOs' signals
 logic [DATA_WIDTH+ADDR_WIDTH-1:0] wf_data_out;
-logic wf_full, wf_empty, wf_pop;
+logic wf_ready, wf_valid, wf_pop;
 logic [ADDR_WIDTH-1:0] rf_data_out;
-logic rf_full, rf_empty, rf_pop;
-logic req_push, req_pop, req_full, req_empty;
+logic rf_ready, rf_valid, rf_pop;
+logic req_push, req_pop, req_ready, req_valid;
 logic [DATA_WIDTH+ADDR_WIDTH:0] req_data_in, req_data_out;
-logic upd_push, upd_pop, upd_full, upd_empty;
+logic upd_push, upd_pop, upd_ready, upd_valid;
 logic [DATA_WIDTH+ADDR_WIDTH-1:0] upd_data_in, upd_data_out;  
 // aligns address to 4 bytes
 logic [31:0] mask;
@@ -53,33 +53,33 @@ always_ff @(posedge clk) begin
   end
 end
 
-assign wf_pop = ~wf_empty & pri_flag;
-fifo # (
-  .DATA_WIDTH  (DATA_WIDTH+ADDR_WIDTH),
-  .DEPTH       (4)
+assign wf_pop = wf_valid & pri_flag;
+fifo_duth # (
+  .DW   (DATA_WIDTH+ADDR_WIDTH),
+  .DEPTH(4)
 ) write_fifo (
   .clk         (clk),
-  .resetn      (resetn),
-  .data_in     ({cache_write_addr, cache_write_data}),
+  .rst         (!resetn),
+  .push_data   ({cache_write_addr, cache_write_data}),
   .push        (cache_write_valid),
-  .full        (wf_full),
-  .data_out    (wf_data_out),
-  .empty       (wf_empty),
+  .ready       (wf_ready),
+  .pop_data    (wf_data_out),
+  .valid       (wf_valid),
   .pop         (wf_pop)
 );
 
-assign rf_pop = ~rf_empty & ~pri_flag;
-fifo # (
-  .DATA_WIDTH  (ADDR_WIDTH),
-  .DEPTH       (4)
+assign rf_pop = rf_valid & ~pri_flag;
+fifo_duth # (
+  .DW   (ADDR_WIDTH),
+  .DEPTH(4)
 ) read_fifo (
   .clk         (clk),
-  .resetn      (resetn),
-  .data_in     (cache_read_addr),
+  .rst         (!resetn),
+  .push_data   (cache_read_addr),
   .push        (cache_read_valid),
-  .full        (rf_full),
-  .data_out    (rf_data_out),
-  .empty       (rf_empty),
+  .ready       (rf_ready),
+  .pop_data    (rf_data_out),
+  .valid       (rf_valid),
   .pop         (rf_pop)
 );
 
@@ -88,22 +88,22 @@ assign req_pop  = nat_request_valid & nat_request_ready;
 assign req_data_in[DATA_WIDTH+ADDR_WIDTH]               = (wf_pop) ? 1                                               : (rf_pop) ? 0           : 0;
 assign req_data_in[DATA_WIDTH+ADDR_WIDTH-1:DATA_WIDTH]  = (wf_pop) ? wf_data_out[DATA_WIDTH+ADDR_WIDTH-1:DATA_WIDTH] : (rf_pop) ? rf_data_out : rf_data_out;
 assign req_data_in[DATA_WIDTH-1:0]                      = (wf_pop) ? wf_data_out[DATA_WIDTH-1:0]                     : (rf_pop) ? 0           : 0;
-fifo # (
-  .DATA_WIDTH  (DATA_WIDTH+ADDR_WIDTH+1),
-  .DEPTH       (4)
+fifo_duth # (
+  .DW   (DATA_WIDTH+ADDR_WIDTH+1),
+  .DEPTH(4)
   ) request_fifo (
   .clk         (clk),
-  .resetn      (resetn),
-  .data_in     (req_data_in),
+  .rst         (!resetn),
+  .push_data   (req_data_in),
   .push        (req_push),
-  .full        (req_full),
-  .data_out    (req_data_out),
-  .empty       (req_empty),
+  .ready       (req_ready),
+  .pop_data    (req_data_out),
+  .valid       (req_valid),
   .pop         (req_pop)
 );
 
 always_comb begin : axi
-  if (!req_empty) begin
+  if (req_valid) begin
     if (req_data_out[DATA_WIDTH+ADDR_WIDTH]) begin
       nat_request_op = 2'b10;
     end else begin
@@ -131,29 +131,29 @@ always_ff @( posedge clk ) begin
 end
 
 assign upd_push    = nat_update_valid & nat_update_ready;
-assign upd_pop     = ~upd_empty;
+assign upd_pop     = upd_valid;
 assign upd_data_in = {nat_update_data, address_keep};
 
-fifo # (
-  .DATA_WIDTH (DATA_WIDTH+ADDR_WIDTH),
-  .DEPTH      (4)
+fifo_duth # (
+  .DW   (DATA_WIDTH+ADDR_WIDTH),
+  .DEPTH(4)
 ) return_fifo (  
   .clk        (clk),
-  .resetn     (resetn),
-  .data_in    (upd_data_in),
+  .rst        (!resetn),
+  .push_data  (upd_data_in),
   .push       (upd_push),
-  .full       (upd_full),
-  .data_out   (upd_data_out),
-  .empty      (upd_empty),
+  .ready      (upd_ready),
+  .pop_data   (upd_data_out),
+  .valid      (upd_valid),
   .pop        (upd_pop)
 );
 
-assign nat_request_valid = ~req_empty & ~addr_keep_flag;
+assign nat_request_valid = req_valid & ~addr_keep_flag;
 assign nat_request_addr  = req_data_out[DATA_WIDTH+ADDR_WIDTH-1:DATA_WIDTH] & mask;
 assign nat_request_data  = req_data_out[DATA_WIDTH-1:0];
-assign nat_update_ready  = ~upd_full;
+assign nat_update_ready  = upd_ready;
 
-assign cache_update_valid = ~upd_empty;
+assign cache_update_valid = upd_valid;
 assign cache_update_addr  = upd_data_out[ADDR_WIDTH-1:0];
 assign cache_update_data  = upd_data_out[DATA_WIDTH+ADDR_WIDTH-1:ADDR_WIDTH];
 

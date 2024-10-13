@@ -114,16 +114,16 @@ logic [7          :0] len;    //! Shared transaction Length signal assigned to b
 logic [ID_WIDTH-1 :0] id_sel; //! Stores a constant ID for each master depending on the ID_SEL parameter.
 
 // request fifo
-logic req_full;   //! Request-fifo full.
-logic req_empty;  //! Request-fifo req_empty.
+logic req_ready;   //! Request-fifo full.
+logic req_valid;  //! Request-fifo req_valid.
 logic req_push;   //! Request-fifo push.
 logic req_pop;    //! Request-fifo pop.
 logic [LS_DATA_WIDTH+ADDR_WIDTH+1:0] req_fifo_in; //! Request-fifo data in.
 logic [LS_DATA_WIDTH+ADDR_WIDTH+1:0] req_fifo_out; //! Request-fifo data out.
 
 // retrun fifo
-logic ret_full;   //! Return-fifo full signal. 
-logic ret_empty;  //! Return-fifo empty signal. 
+logic ret_ready;   //! Return-fifo full signal. 
+logic ret_valid;  //! Return-fifo empty signal. 
 logic ret_push;   //! Return-fifo push signal. 
 logic ret_pop;    //! Return-fifo pop signal.
 logic [LS_DATA_WIDTH-1:0] ret_data_in;  //! Return-fifo data in.
@@ -159,7 +159,7 @@ end
 always_ff @( posedge aclk ) begin : Update_write_data_buffer  //! - Checks if the next entry in the Request-fifo is a write request and then it updates the write_data_buffer.
   if (!aresetn) 
     write_data_buffer <= '{default:0};
-  else if (req_fifo_out[1:0] == 2'b10 && !req_empty && !aw.pending)
+  else if (req_fifo_out[1:0] == 2'b10 && req_valid && !aw.pending)
     for (i1=0; i1<NTRANSF; i1++)
       write_data_buffer[i1] <= req_fifo_out[(i1*DATA_WIDTH)+ADDR_WIDTH+2+:32];
 end
@@ -177,8 +177,8 @@ end
 
 // request fifo
 always_comb begin : Request_fifo_pop  //! - When a AxVALID-AxREADY handshake takes place, the request-fifo gets popped.
-  if      (!req_empty && req_fifo_out[1:0]==2'b10 && AWVALID && AWREADY) req_pop = 1;
-  else if (!req_empty && req_fifo_out[1:0]==2'b01 && ARVALID && ARREADY) req_pop = 1;
+  if      (req_valid && req_fifo_out[1:0]==2'b10 && AWVALID && AWREADY) req_pop = 1;
+  else if (req_valid && req_fifo_out[1:0]==2'b01 && ARVALID && ARREADY) req_pop = 1;
   else                                                                   req_pop = 0;
 end
 assign req_push     = (ls_valid_in && ls_ready_out);
@@ -203,33 +203,33 @@ assign ret_pop = ls_valid_out & ls_ready_in;
 ////////////////////////////
 
 //! FIFO that stores the incoming requests from the Left-side Interface.
-fifo #(
-  .DATA_WIDTH(LS_DATA_WIDTH+ADDR_WIDTH+2),
+fifo_duth #(
+  .DW(LS_DATA_WIDTH+ADDR_WIDTH+2),
   .DEPTH(8)
 ) request_fifo (
   .clk        (aclk),
-  .resetn     (aresetn),
-  .data_in    (req_fifo_in),
+  .rst        (!aresetn),
+  .push_data  (req_fifo_in),
   .push       (req_push),
-  .full       (req_full),
-  .data_out   (req_fifo_out),
-  .empty      (req_empty),
+  .ready      (req_ready),
+  .pop_data   (req_fifo_out),
+  .valid      (req_valid),
   .pop        (req_pop)
 );
 
 // Return fifo
 //! FIFO that stores returning responses and data to send to the Left-side Interface.
-fifo # (
-  .DATA_WIDTH(LS_DATA_WIDTH),
+fifo_duth # (
+  .DW(LS_DATA_WIDTH),
   .DEPTH(8)
 ) return_fifo (
   .clk        (aclk),
-  .resetn     (aresetn),
-  .data_in    (ret_data_in),
+  .rst        (!aresetn),
+  .push_data  (ret_data_in),
   .push       (ret_push),
-  .full       (ret_full),
-  .data_out   (ret_data_out),
-  .empty      (ret_empty),
+  .ready      (ret_ready),
+  .pop_data   (ret_data_out),
+  .valid      (ret_valid),
   .pop        (ret_pop)
 );
 
@@ -247,7 +247,7 @@ always_ff @(posedge aclk) begin : awpending_and_awaddr_control
   if (!aresetn) begin
     aw.pending <= 0;
     aw.addr    <= 0;
-  end else if (!req_empty && req_fifo_out[1:0]==2'b10 || aw.pending) begin
+  end else if (req_valid && req_fifo_out[1:0]==2'b10 || aw.pending) begin
     aw.pending <= (BVALID && BREADY) ? 0 : 1;
     aw.addr    <= req_fifo_out[ADDR_WIDTH+1:2];
   end
@@ -260,7 +260,7 @@ always_ff @( posedge aclk ) begin : awvalid_control
     aw.valid <= 0;
   else if (AWVALID && AWREADY)                                  
     aw.valid <= 0;
-  else if (!req_empty && req_fifo_out[1:0]==2'b10 && !aw.pending && !ret_full)
+  else if (req_valid && req_fifo_out[1:0]==2'b10 && !aw.pending && ret_ready)
     aw.valid <= 1;
 end
 
@@ -298,7 +298,7 @@ assign WLAST    = (write_index == len);
 always_ff @(posedge aclk) begin : bready_control
   if      (!aresetn)            BREADY <= 0;
   else if (BVALID && BREADY)    BREADY <= 0;
-  else if (BVALID && !ret_full) BREADY <= 1;
+  else if (BVALID && ret_ready) BREADY <= 1;
 end
 
 
@@ -311,7 +311,7 @@ always_ff @(posedge aclk) begin : arpending_and_araddr_control
   if (!aresetn) begin
     ar.pending <= 0;
     ar.addr    <= 0;
-  end else if (!req_empty && req_fifo_out[1:0]==2'b01 || ar.pending) begin
+  end else if (req_valid && req_fifo_out[1:0]==2'b01 || ar.pending) begin
     ar.pending <= (RVALID && RREADY && RLAST) ? 0 : 1;
     ar.addr    <= req_fifo_out[ADDR_WIDTH+1:2];
   end else begin
@@ -327,7 +327,7 @@ always_ff @( posedge aclk ) begin : arvalid_control
     ar.valid <= 0;
   else if (ARVALID && ARREADY)                                  
     ar.valid <= 0;
-  else if (!req_empty && req_fifo_out[1:0]==2'b01 && !ar.pending && !ret_full)
+  else if (req_valid && req_fifo_out[1:0]==2'b01 && !ar.pending && ret_ready)
     ar.valid <= 1;
 end
 
@@ -345,13 +345,13 @@ assign ARVALID  = ar.valid;
 always_ff @(posedge aclk) begin : rready_control
   if      (!aresetn)                       RREADY <= 0;
   else if (RVALID && RLAST && RREADY)      RREADY <= 0;
-  else if (RVALID && !BVALID && !ret_full) RREADY <= 1;
+  else if (RVALID && !BVALID && ret_ready) RREADY <= 1;
 end
 
 
 // SIMPLE VALID.READY INTERFACE
-assign ls_ready_out = ~req_full;
-assign ls_valid_out = ~ret_empty;
+assign ls_ready_out = req_ready;
+assign ls_valid_out = ret_valid;
 assign ls_data_out  = ret_data_out[LS_DATA_WIDTH-1:0];
 
 endmodule
