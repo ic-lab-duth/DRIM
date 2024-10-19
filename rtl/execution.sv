@@ -40,6 +40,8 @@ module execution #(
     input  to_execution [               1:0] t_execution          ,
     input  ex_update                         cache_fu_update      ,
     input  logic                             cache_blocked        ,
+    //Flush
+    input  logic                             flush_valid          ,
     //Forward Interface
     output logic        [     ADDR_BITS-1:0] frw_address          ,
     output logic        [ MICROOP_WIDTH-1:0] frw_microop          ,
@@ -86,6 +88,8 @@ module execution #(
         .input_data           (input_data[0]        ),
         .cache_fu_update      (cache_fu_update      ),
         .cache_blocked        (cache_blocked        ),
+        //Flush
+        .flush_valid          (flush_valid          ),
         //Forward Interface
         .frw_address          (frw_address          ),
         .frw_microop          (frw_microop          ),
