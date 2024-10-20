@@ -29,6 +29,8 @@ module load_store_unit #(
     input  to_execution           input_data           ,
     input  ex_update              cache_fu_update      ,
     input  logic                  cache_blocked        ,
+    //Flush
+    input logic                   flush_valid          ,
     //Forward Interface
     output logic [ ADDR_BITS-1:0] frw_address          ,
     output logic [   MICROOP-1:0] frw_microop          ,

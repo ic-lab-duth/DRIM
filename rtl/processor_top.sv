@@ -391,6 +391,8 @@ module processor_top #(
         .cache_fu_update      (cache_fu_update    ),
         .cache_blocked        (cache_blocked      ),
 
+        .flush_valid          (flush_valid        ),
+
         .frw_address          (cache_frw_address  ),
         .frw_microop          (cache_frw_microop  ),
         .frw_data             (cache_frw_data     ),
