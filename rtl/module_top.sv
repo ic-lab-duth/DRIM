@@ -204,8 +204,8 @@ module module_top (
         .R_WIDTH(R_WIDTH),
         .MICROOP_W(MICROOP_W),
         .ROB_ENTRIES(ROB_ENTRIES),
-        .IC_ENTRIES(IC_ENTRIES/16),
-        .DC_ENTRIES(DC_ENTRIES/16),
+        .IC_ENTRIES(IC_ENTRIES),
+        .DC_ENTRIES(DC_ENTRIES),
         .IC_DW(IC_DW),
         .DC_DW(DC_DW),
         .USE_AXI(0)
