@@ -120,3 +120,5 @@ CSWSP,
 CFSWSP,
 CIDLE
 } detected_instr_c;
+
+typedef enum logic [1:0] {FIXED, INCR, WRAP, NOOP} burst_type;

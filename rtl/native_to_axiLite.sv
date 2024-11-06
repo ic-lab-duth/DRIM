@@ -1,5 +1,3 @@
-import structs::*;
-
 module native_to_axiLite # (
   parameter ADDR_BITS     = 32,  // default: 32
   parameter DATA_WIDTH    = 32,  // default: 32

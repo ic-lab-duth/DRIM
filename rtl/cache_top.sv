@@ -49,9 +49,9 @@ module cache_top #(
 
   // icache / L2 interface
   output logic                  valid_out,
-  input  logic                  ready_in,
   output logic [ADDR_BITS-1:0]  address_out,
-  input  logic [ IC_DW-1:0]     data_in,
+  input  logic                  ready_in,
+  input  logic [IC_DW-1:0]      data_in,
 
   // Request Write Port to L2
   output logic                  write_l2_valid,
@@ -70,7 +70,7 @@ module cache_top #(
   output logic                  ic_axi_awvalid,
   input  logic                  ic_axi_awready,
   output logic [AXI_AW-1:0]     ic_axi_awaddr,
-  output logic [1:0]            ic_axi_awburst,
+  output burst_type             ic_axi_awburst,
   output logic [7:0]            ic_axi_awlen,
   output logic [2:0]            ic_axi_awsize,
   output logic [3:0]            ic_axi_awid,
@@ -86,7 +86,7 @@ module cache_top #(
   input  logic                  ic_axi_arready,
   output logic                  ic_axi_arvalid,
   output logic [AXI_AW-1:0]     ic_axi_araddr,
-  output logic [1:0]            ic_axi_arburst,
+  output burst_type             ic_axi_arburst,
   output logic [7:0]            ic_axi_arlen,
   output logic [2:0]            ic_axi_arsize,
   output logic [3:0]            ic_axi_arid,
@@ -100,7 +100,7 @@ module cache_top #(
   output logic                  dc_axi_awvalid,
   input  logic                  dc_axi_awready,
   output logic [AXI_AW-1:0]     dc_axi_awaddr,
-  output logic [1:0]            dc_axi_awburst,
+  output burst_type             dc_axi_awburst,
   output logic [7:0]            dc_axi_awlen,
   output logic [2:0]            dc_axi_awsize,
   output logic [3:0]            dc_axi_awid,
@@ -116,7 +116,7 @@ module cache_top #(
   input  logic                  dc_axi_arready,
   output logic                  dc_axi_arvalid,
   output logic [AXI_AW-1:0]     dc_axi_araddr,
-  output logic [1:0]            dc_axi_arburst,
+  output burst_type             dc_axi_arburst,
   output logic [7:0]            dc_axi_arlen,
   output logic [2:0]            dc_axi_arsize,
   output logic [3:0]            dc_axi_arid,
@@ -386,7 +386,7 @@ generate
       .RREADY               (dc_axi_rready)
     );
 
-    assign valid_o = 1'd0;
+    assign valid_out = 1'd0;
     assign address_out = '{default: 'd0};
     assign write_l2_valid = 1'd0;
     assign write_l2_addr = '{default: 'd0};
@@ -396,9 +396,9 @@ generate
 
   end else begin
 
-    assign ic_to_nat_valid_i = ready_in; 
-    assign valid_o = ic_to_nat_valid_o;
+    assign valid_out = ic_to_nat_valid_o;
     assign address_out = ic_to_nat_address_o;
+    assign ic_to_nat_valid_i = ready_in; 
     assign ic_to_nat_data_i = data_in;
 
     assign write_l2_valid = dc_to_nat_store_valid;

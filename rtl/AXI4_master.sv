@@ -3,8 +3,6 @@
 //! After that, it waits for the BRESP signal that informs the master whether or not the transaction was successful.
 //! This master has to wait until it gets a response for the latest write transaction to initialize another request.
 
-typedef enum logic [1:0] {FIXED, INCR, WRAP, NOOP} burst_type;
-
 //! @title Simple valid.ready to AXI4 Master
 //! @author Giorgos Pelekidis
 module AXI4_master #(
@@ -154,7 +152,7 @@ always_ff @( posedge aclk ) begin : Update_write_data_buffer  //! - Checks if th
     write_data_buffer <= '{default:0};
   else if (req_fifo_out[1:0] == 2'b10 && req_valid && !awpending)
     for (i1=0; i1<NTRANSF; i1++)
-      write_data_buffer[i1] <= req_fifo_out[(i1*DATA_WIDTH)+ADDR_WIDTH+2+:32];
+      write_data_buffer[i1] <= req_fifo_out[(i1*DATA_WIDTH)+ADDR_WIDTH+2+:DATA_WIDTH];
 end
 
 always_ff @( posedge aclk ) begin : Read_index_increment //! - When a RVALID-RREADY handshake takes place, the index is incremented by 1 to store the next word to the read_data_buffer.
@@ -304,7 +302,7 @@ always_ff @(posedge aclk) begin : arpending_and_araddr_control
   if (!aresetn) begin
     arpending <= 0;
     araddr    <= 0;
-  end else if (req_valid && req_fifo_out[1:0]==2'b01 || a.pending) begin
+  end else if (req_valid && req_fifo_out[1:0]==2'b01 || arpending) begin
     arpending <= (RVALID && RREADY && RLAST) ? 0 : 1;
     araddr    <= req_fifo_out[ADDR_WIDTH+1:2];
   end else begin
