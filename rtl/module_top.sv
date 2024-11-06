@@ -18,7 +18,7 @@ module module_top (
     localparam IC_DW        = 256 ;
     localparam DC_ENTRIES   = 32  ;
     localparam DC_DW        = 256 ;
-    localparam L2_ENTRIES   = 2048;
+    localparam L2_ENTRIES   = 1900000;
     localparam L2_DW        = 512 ;
     localparam REALISTIC    = 1   ;
     localparam DELAY_CYCLES = 10  ;
@@ -59,6 +59,40 @@ module module_top (
     logic [14:0] frame_buffer_address;
     logic [ 7:0] red_o, green_o, blue_o;
     logic [ 4:0] color               ;
+
+    logic                  ic_inactive_valid_o;
+    logic [ADDR_BITS-1:0]  ic_inactive_addr_o;
+    logic [IC_DW-1:0]      ic_inactive_data_o;
+
+    logic                  ic_AXI_AWVALID, dc_AXI_AWVALID;
+    logic                  ic_AXI_AWREADY, dc_AXI_AWREADY;
+    logic [ADDR_BITS-1 :0] ic_AXI_AWADDR , dc_AXI_AWADDR ;
+    burst_type             ic_AXI_AWBURST, dc_AXI_AWBURST;
+    logic [7           :0] ic_AXI_AWLEN  , dc_AXI_AWLEN  ;
+    logic [2           :0] ic_AXI_AWSIZE , dc_AXI_AWSIZE ;
+    logic [3           :0] ic_AXI_AWID   , dc_AXI_AWID   ;
+    logic                  ic_AXI_WVALID , dc_AXI_WVALID ;
+    logic                  ic_AXI_WREADY , dc_AXI_WREADY ;
+    logic [DATA_WIDTH-1:0] ic_AXI_WDATA  , dc_AXI_WDATA  ;
+    logic                  ic_AXI_WLAST  , dc_AXI_WLAST  ;
+    logic [3           :0] ic_AXI_WSTRB  , dc_AXI_WSTRB  ;
+    logic [3           :0] ic_AXI_BID    , dc_AXI_BID    ;
+    logic [1           :0] ic_AXI_BRESP  , dc_AXI_BRESP  ;
+    logic                  ic_AXI_BVALID , dc_AXI_BVALID ;
+    logic                  ic_AXI_BREADY , dc_AXI_BREADY ;
+    logic                  ic_AXI_ARREADY, dc_AXI_ARREADY;
+    logic                  ic_AXI_ARVALID, dc_AXI_ARVALID;
+    logic [ADDR_BITS-1 :0] ic_AXI_ARADDR , dc_AXI_ARADDR ;
+    burst_type             ic_AXI_ARBURST, dc_AXI_ARBURST;
+    logic [7           :0] ic_AXI_ARLEN  , dc_AXI_ARLEN  ;
+    logic [2           :0] ic_AXI_ARSIZE , dc_AXI_ARSIZE ;
+    logic [3           :0] ic_AXI_ARID   , dc_AXI_ARID   ;
+    logic [DATA_WIDTH-1:0] ic_AXI_RDATA  , dc_AXI_RDATA  ;
+    logic                  ic_AXI_RLAST  , dc_AXI_RLAST  ;
+    logic [3           :0] ic_AXI_RID    , dc_AXI_RID    ;
+    logic [1           :0] ic_AXI_RRESP  , dc_AXI_RRESP  ;
+    logic                  ic_AXI_RVALID , dc_AXI_RVALID ;
+    logic                  ic_AXI_RREADY , dc_AXI_RREADY ;
 
 
     //////////////////////////////////////////////////
@@ -134,7 +168,7 @@ module module_top (
         .DCACHE_BLOCK_DW(DC_DW       ),
         .REALISTIC      (REALISTIC   ),
         .DELAY_CYCLES   (DELAY_CYCLES),
-        .FILE_NAME      ("memory.txt")
+        .FILE_NAME      ("memory.mem")
     ) main_memory (
         .clk              (clk             ),
         .rst_n            (rst_n           ),
@@ -158,9 +192,112 @@ module module_top (
         .dcache_data_wr   (write_l2_data   )
         // .dcache_microop_wr(write_l2_microop),
     );
-    //////////////////////////////////////////////////
-    //                Caches' Subsection            //
-    //////////////////////////////////////////////////
+
+    // AXI4_slave # (
+    //     .ID_W       (4),
+    //     .ADDR_W     (ADDR_BITS),
+    //     .AXI_DW     (DATA_WIDTH),
+    //     .RESP_W     (2),
+    //     .NATIVE_DW  (IC_DW)
+    // ) AXI4_slave_icache (
+    //     .aclk_i             (clk),
+    //     .aresetn_i          (rst_n),
+
+    //     .nat_write_valid_o  (ic_inactive_valid_o),
+    //     .nat_write_addr_o   (ic_inactive_addr_o),
+    //     .nat_write_data_o   (ic_inactive_data_o),
+        
+    //     .nat_read_valid_o   (icache_valid_i),
+    //     .nat_read_addr_o    (icache_address_i),
+    //     .nat_read_valid_i   (icache_valid_o),
+    //     .nat_read_addr_i    ('{default: '0}),
+    //     .nat_read_data_i    (icache_data_o),
+
+    //     .s_axi_awvalid_i    (ic_AXI_AWVALID),
+    //     .s_axi_awready_o    (ic_AXI_AWREADY),
+    //     .s_axi_awaddr_i     (ic_AXI_AWADDR),
+    //     .s_axi_awburst_i    (ic_AXI_AWBURST),
+    //     .s_axi_awlen_i      (ic_AXI_AWLEN),
+    //     .s_axi_awsize_i     (ic_AXI_AWSIZE),
+    //     .s_axi_awid_i       (ic_AXI_AWID),
+    //     .s_axi_wvalid_i     (ic_AXI_WVALID),
+    //     .s_axi_wready_o     (ic_AXI_WREADY),
+    //     .s_axi_wdata_i      (ic_AXI_WDATA),
+    //     .s_axi_wlast_i      (ic_AXI_WLAST),
+    //     .s_axi_wstrb_i      (ic_AXI_WSTRB),
+    //     .s_axi_bid_o        (ic_AXI_BID),
+    //     .s_axi_bresp_o      (ic_AXI_BRESP),
+    //     .s_axi_bvalid_o     (ic_AXI_BVALID),
+    //     .s_axi_bready_i     (ic_AXI_BREADY),
+    //     .s_axi_arready_o    (ic_AXI_ARREADY),
+    //     .s_axi_arvalid_i    (ic_AXI_ARVALID),
+    //     .s_axi_araddr_i     (ic_AXI_ARADDR),
+    //     .s_axi_arburst_i    (ic_AXI_ARBURST),
+    //     .s_axi_arlen_i      (ic_AXI_ARLEN),
+    //     .s_axi_arsize_i     (ic_AXI_ARSIZE),
+    //     .s_axi_arid_i       (ic_AXI_ARID),
+    //     .s_axi_rdata_o      (ic_AXI_RDATA),
+    //     .s_axi_rlast_o      (ic_AXI_RLAST),
+    //     .s_axi_rid_o        (ic_AXI_RID),
+    //     .s_axi_rresp_o      (ic_AXI_RRESP),
+    //     .s_axi_rvalid_o     (ic_AXI_RVALID),
+    //     .s_axi_rready_i     (ic_AXI_RREADY)
+    // );
+    
+    // AXI4_slave # (
+    //     .ID_W       (4),
+    //     .ADDR_W     (ADDR_BITS),
+    //     .AXI_DW     (DATA_WIDTH),
+    //     .RESP_W     (2),
+    //     .NATIVE_DW  (DC_DW)
+    // ) AXI4_slave_dcache (
+    //     .aclk_i             (clk),
+    //     .aresetn_i          (rst_n),
+
+    //     .nat_write_valid_o  (write_l2_valid_c),
+    //     .nat_write_addr_o   (write_l2_addr_c),
+    //     .nat_write_data_o   (write_l2_data_c),
+        
+    //     .nat_read_valid_o   (dcache_valid_i),
+    //     .nat_read_addr_o    (dcache_address_i),
+    //     .nat_read_valid_i   (dcache_valid_o),
+    //     .nat_read_addr_i    (dcache_address_o),
+    //     .nat_read_data_i    (dcache_data_o),
+
+    //     .s_axi_awvalid_i    (dc_AXI_AWVALID),
+    //     .s_axi_awready_o    (dc_AXI_AWREADY),
+    //     .s_axi_awaddr_i     (dc_AXI_AWADDR),
+    //     .s_axi_awburst_i    (dc_AXI_AWBURST),
+    //     .s_axi_awlen_i      (dc_AXI_AWLEN),
+    //     .s_axi_awsize_i     (dc_AXI_AWSIZE),
+    //     .s_axi_awid_i       (dc_AXI_AWID),
+    //     .s_axi_wvalid_i     (dc_AXI_WVALID),
+    //     .s_axi_wready_o     (dc_AXI_WREADY),
+    //     .s_axi_wdata_i      (dc_AXI_WDATA),
+    //     .s_axi_wlast_i      (dc_AXI_WLAST),
+    //     .s_axi_wstrb_i      (dc_AXI_WSTRB),
+    //     .s_axi_bid_o        (dc_AXI_BID),
+    //     .s_axi_bresp_o      (dc_AXI_BRESP),
+    //     .s_axi_bvalid_o     (dc_AXI_BVALID),
+    //     .s_axi_bready_i     (dc_AXI_BREADY),
+    //     .s_axi_arready_o    (dc_AXI_ARREADY),
+    //     .s_axi_arvalid_i    (dc_AXI_ARVALID),
+    //     .s_axi_araddr_i     (dc_AXI_ARADDR),
+    //     .s_axi_arburst_i    (dc_AXI_ARBURST),
+    //     .s_axi_arlen_i      (dc_AXI_ARLEN),
+    //     .s_axi_arsize_i     (dc_AXI_ARSIZE),
+    //     .s_axi_arid_i       (dc_AXI_ARID),
+    //     .s_axi_rdata_o      (dc_AXI_RDATA),
+    //     .s_axi_rlast_o      (dc_AXI_RLAST),
+    //     .s_axi_rid_o        (dc_AXI_RID),
+    //     .s_axi_rresp_o      (dc_AXI_RRESP),
+    //     .s_axi_rvalid_o     (dc_AXI_RVALID),
+    //     .s_axi_rready_i     (dc_AXI_RREADY)
+    // );
+    
+    /////////////////////////////////////////////////
+    //               Caches' Subsection            //
+    /////////////////////////////////////////////////
     cache_top # (
         .ADDR_BITS(ADDR_BITS),
         .ISTR_DW(ISTR_DW),
@@ -168,14 +305,14 @@ module module_top (
         .R_WIDTH(R_WIDTH),
         .MICROOP_W(MICROOP_W),
         .ROB_ENTRIES(ROB_ENTRIES),
-        .IC_ENTRIES(IC_ENTRIES),
-        .DC_ENTRIES(DC_ENTRIES),
+        .IC_ENTRIES(IC_ENTRIES/16),
+        .DC_ENTRIES(DC_ENTRIES/16),
         .IC_DW(IC_DW),
         .DC_DW(DC_DW),
         .USE_AXI(0)
     ) caches_top (
         .clk(clk),
-        .resetn(resetn),
+        .resetn(rst_n),
 
         .icache_current_pc      (current_pc),
         .icache_hit_icache      (hit_icache),
@@ -189,7 +326,7 @@ module module_top (
         .dcache_load_dest       (cache_load_dest),
         .dcache_load_microop    (cache_load_microop),
         .dcache_load_ticket     (cache_load_ticket),
-        .dcache_store_valid     (cache_store_valid),
+        .dcache_store_valid     (cache_store_cached),
         .dcache_store_address   (cache_store_addr),
         .dcache_store_data      (cache_store_data),
         .dcache_store_microop   (cache_store_microop),
@@ -197,15 +334,75 @@ module module_top (
         .dcache_blocked         (cache_blocked),
         .dcache_served_output   (cache_fu_update),
 
+        // .ic_axi_awvalid         (ic_AXI_AWVALID),
+        // .ic_axi_awready         (ic_AXI_AWREADY),
+        // .ic_axi_awaddr          (ic_AXI_AWADDR),
+        // .ic_axi_awburst         (ic_AXI_AWBURST),
+        // .ic_axi_awlen           (ic_AXI_AWLEN),
+        // .ic_axi_awsize          (ic_AXI_AWSIZE),
+        // .ic_axi_awid            (ic_AXI_AWID),
+        // .ic_axi_wvalid          (ic_AXI_WVALID),
+        // .ic_axi_wready          (ic_AXI_WREADY),
+        // .ic_axi_wdata           (ic_AXI_WDATA),
+        // .ic_axi_wlast           (ic_AXI_WLAST),
+        // .ic_axi_wstrb           (ic_AXI_WSTRB),
+        // .ic_axi_bid             (ic_AXI_BID),
+        // .ic_axi_bresp           (ic_AXI_BRESP),
+        // .ic_axi_bvalid          (ic_AXI_BVALID),
+        // .ic_axi_bready          (ic_AXI_BREADY),
+        // .ic_axi_arready         (ic_AXI_ARREADY),
+        // .ic_axi_arvalid         (ic_AXI_ARVALID),
+        // .ic_axi_araddr          (ic_AXI_ARADDR),
+        // .ic_axi_arburst         (ic_AXI_ARBURST),
+        // .ic_axi_arlen           (ic_AXI_ARLEN),
+        // .ic_axi_arsize          (ic_AXI_ARSIZE),
+        // .ic_axi_arid            (ic_AXI_ARID),
+        // .ic_axi_rdata           (ic_AXI_RDATA),
+        // .ic_axi_rlast           (ic_AXI_RLAST),
+        // .ic_axi_rid             (ic_AXI_RID),
+        // .ic_axi_rresp           (ic_AXI_RRESP),
+        // .ic_axi_rvalid          (ic_AXI_RVALID),
+        // .ic_axi_rready          (ic_AXI_RREADY),
+      
+        // .dc_axi_awvalid         (dc_AXI_AWVALID),
+        // .dc_axi_awready         (dc_AXI_AWREADY),
+        // .dc_axi_awaddr          (dc_AXI_AWADDR),
+        // .dc_axi_awburst         (dc_AXI_AWBURST),
+        // .dc_axi_awlen           (dc_AXI_AWLEN),
+        // .dc_axi_awsize          (dc_AXI_AWSIZE),
+        // .dc_axi_awid            (dc_AXI_AWID),
+        // .dc_axi_wvalid          (dc_AXI_WVALID),
+        // .dc_axi_wready          (dc_AXI_WREADY),
+        // .dc_axi_wdata           (dc_AXI_WDATA),
+        // .dc_axi_wlast           (dc_AXI_WLAST),
+        // .dc_axi_wstrb           (dc_AXI_WSTRB),
+        // .dc_axi_bid             (dc_AXI_BID),
+        // .dc_axi_bresp           (dc_AXI_BRESP),
+        // .dc_axi_bvalid          (dc_AXI_BVALID),
+        // .dc_axi_bready          (dc_AXI_BREADY),
+        // .dc_axi_arready         (dc_AXI_ARREADY),
+        // .dc_axi_arvalid         (dc_AXI_ARVALID),
+        // .dc_axi_araddr          (dc_AXI_ARADDR),
+        // .dc_axi_arburst         (dc_AXI_ARBURST),
+        // .dc_axi_arlen           (dc_AXI_ARLEN),
+        // .dc_axi_arsize          (dc_AXI_ARSIZE),
+        // .dc_axi_arid            (dc_AXI_ARID),
+        // .dc_axi_rdata           (dc_AXI_RDATA),
+        // .dc_axi_rlast           (dc_AXI_RLAST),
+        // .dc_axi_rid             (dc_AXI_RID),
+        // .dc_axi_rresp           (dc_AXI_RRESP),
+        // .dc_axi_rvalid          (dc_AXI_RVALID),
+        // .dc_axi_rready          (dc_AXI_RREADY)
+      
         // icache
         .valid_out              (icache_valid_i),
-        .ready_in               (icache_valid_o),
         .address_out            (icache_address_i),
+        .ready_in               (icache_valid_o),
         .data_in                (icache_data_o),
         //Request Write Port to L2
-        .write_l2_valid         (write_l2_valid),
-        .write_l2_addr          (write_l2_addr),
-        .write_l2_data          (write_l2_data),
+        .write_l2_valid         (write_l2_valid_c),
+        .write_l2_addr          (write_l2_addr_c),
+        .write_l2_data          (write_l2_data_c),
         //Request Read Port to L2
         .request_l2_valid       (dcache_valid_i),
         .request_l2_addr        (dcache_address_i),
@@ -213,7 +410,7 @@ module module_top (
         .update_l2_valid        (dcache_valid_o),
         .update_l2_addr         (dcache_address_o),
         .update_l2_data         (dcache_data_o)
-    );
+     );
 
     //=====================================================================
     logic [14:0] vga_address;

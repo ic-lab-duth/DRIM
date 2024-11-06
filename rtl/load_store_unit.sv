@@ -29,6 +29,8 @@ module load_store_unit #(
     input  to_execution           input_data           ,
     input  ex_update              cache_fu_update      ,
     input  logic                  cache_blocked        ,
+    //Flush
+    input logic                   flush_valid          ,
     //Forward Interface
     output logic [ ADDR_BITS-1:0] frw_address          ,
     output logic [   MICROOP-1:0] frw_microop          ,
@@ -87,7 +89,7 @@ module load_store_unit #(
         end
     end
     //Valid Operation
-    assign valid_i = valid & input_data.valid;
+    assign valid_i = flush_valid ? 0 : (valid & input_data.valid);
     //Operation is store
     assign is_store         = (microoperation==5'b00110) | (microoperation==5'b00111) | (microoperation==5'b01000);
     assign misaligned_stall = ~is_store & frw_stall;
