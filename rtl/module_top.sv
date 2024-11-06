@@ -249,7 +249,7 @@ module module_top (
         .update_l2_valid        (dcache_valid_o),
         .update_l2_addr         (dcache_address_o),
         .update_l2_data         (dcache_data_o)
-     );
+    );
 
     //=====================================================================
     logic [14:0] vga_address;
