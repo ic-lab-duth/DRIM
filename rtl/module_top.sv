@@ -18,7 +18,7 @@ module module_top (
     localparam IC_DW        = 256 ;
     localparam DC_ENTRIES   = 32  ;
     localparam DC_DW        = 256 ;
-    localparam L2_ENTRIES   = 2048;
+    localparam L2_ENTRIES   = 1900000;
     localparam L2_DW        = 512 ;
     localparam REALISTIC    = 1   ;
     localparam DELAY_CYCLES = 10  ;
@@ -59,6 +59,40 @@ module module_top (
     logic [14:0] frame_buffer_address;
     logic [ 7:0] red_o, green_o, blue_o;
     logic [ 4:0] color               ;
+
+    logic                  ic_inactive_valid_o;
+    logic [ADDR_BITS-1:0]  ic_inactive_addr_o;
+    logic [IC_DW-1:0]      ic_inactive_data_o;
+
+    logic                  ic_AXI_AWVALID, dc_AXI_AWVALID;
+    logic                  ic_AXI_AWREADY, dc_AXI_AWREADY;
+    logic [ADDR_BITS-1 :0] ic_AXI_AWADDR , dc_AXI_AWADDR ;
+    burst_type             ic_AXI_AWBURST, dc_AXI_AWBURST;
+    logic [7           :0] ic_AXI_AWLEN  , dc_AXI_AWLEN  ;
+    logic [2           :0] ic_AXI_AWSIZE , dc_AXI_AWSIZE ;
+    logic [3           :0] ic_AXI_AWID   , dc_AXI_AWID   ;
+    logic                  ic_AXI_WVALID , dc_AXI_WVALID ;
+    logic                  ic_AXI_WREADY , dc_AXI_WREADY ;
+    logic [DATA_WIDTH-1:0] ic_AXI_WDATA  , dc_AXI_WDATA  ;
+    logic                  ic_AXI_WLAST  , dc_AXI_WLAST  ;
+    logic [3           :0] ic_AXI_WSTRB  , dc_AXI_WSTRB  ;
+    logic [3           :0] ic_AXI_BID    , dc_AXI_BID    ;
+    logic [1           :0] ic_AXI_BRESP  , dc_AXI_BRESP  ;
+    logic                  ic_AXI_BVALID , dc_AXI_BVALID ;
+    logic                  ic_AXI_BREADY , dc_AXI_BREADY ;
+    logic                  ic_AXI_ARREADY, dc_AXI_ARREADY;
+    logic                  ic_AXI_ARVALID, dc_AXI_ARVALID;
+    logic [ADDR_BITS-1 :0] ic_AXI_ARADDR , dc_AXI_ARADDR ;
+    burst_type             ic_AXI_ARBURST, dc_AXI_ARBURST;
+    logic [7           :0] ic_AXI_ARLEN  , dc_AXI_ARLEN  ;
+    logic [2           :0] ic_AXI_ARSIZE , dc_AXI_ARSIZE ;
+    logic [3           :0] ic_AXI_ARID   , dc_AXI_ARID   ;
+    logic [DATA_WIDTH-1:0] ic_AXI_RDATA  , dc_AXI_RDATA  ;
+    logic                  ic_AXI_RLAST  , dc_AXI_RLAST  ;
+    logic [3           :0] ic_AXI_RID    , dc_AXI_RID    ;
+    logic [1           :0] ic_AXI_RRESP  , dc_AXI_RRESP  ;
+    logic                  ic_AXI_RVALID , dc_AXI_RVALID ;
+    logic                  ic_AXI_RREADY , dc_AXI_RREADY ;
 
 
     //////////////////////////////////////////////////
@@ -126,70 +160,75 @@ module module_top (
     //////////////////////////////////////////////////
     //               Main Memory Module             //
     //////////////////////////////////////////////////
-    main_memory #(
-        .L2_BLOCK_DW    (L2_DW       ),
-        .L2_ENTRIES     (L2_ENTRIES  ),
-        .ADDRESS_BITS   (ADDR_BITS   ),
-        .ICACHE_BLOCK_DW(IC_DW       ),
-        .DCACHE_BLOCK_DW(DC_DW       ),
-        .REALISTIC      (REALISTIC   ),
-        .DELAY_CYCLES   (DELAY_CYCLES),
-        .FILE_NAME      ("memory.txt")
-    ) main_memory (
-        .clk              (clk             ),
-        .rst_n            (rst_n           ),
-        //Read Request Input from ICache
-        .icache_valid_i   (icache_valid_i  ),
-        .icache_address_i (icache_address_i),
-        //Output to ICache
-        .icache_valid_o   (icache_valid_o  ),
-        //.icache_address_o (icache_address_o),
-        .icache_data_o    (icache_data_o   ),
-        //Read Request Input from DCache
-        .dcache_valid_i   (dcache_valid_i  ),
-        .dcache_address_i (dcache_address_i),
-        //Output to DCache
-        .dcache_valid_o   (dcache_valid_o  ),
-        .dcache_address_o (dcache_address_o),
-        .dcache_data_o    (dcache_data_o   ),
-        //Write Request Input from DCache
-        .dcache_valid_wr  (write_l2_valid  ),
-        .dcache_address_wr(write_l2_addr   ),
-        .dcache_data_wr   (write_l2_data   )
-        // .dcache_microop_wr(write_l2_microop),
+    main_memory_top # (
+        .USE_AXI                (0),
+        .L2_BLOCK_DW            (L2_DW),
+        .L2_ENTRIES             (L2_ENTRIES),
+        .ADDRESS_BITS           (ADDR_BITS),
+        .ICACHE_BLOCK_DW        (IC_DW),
+        .DCACHE_BLOCK_DW        (DC_DW),
+        .REALISTIC              (REALISTIC),
+        .DELAY_CYCLES           (DELAY_CYCLES),
+        .FILE_NAME              ("memory.mem"),
+        .ID_W                   (4),
+        .ADDR_W                 (32),
+        .AXI_DW                 (32),
+        .RESP_W                 (2)
+    ) main_memory_top (
+        .clk_i                  (clk),
+        .rst_n_i                (rst_n),
+        // icache
+        .icache_valid_i         (icache_valid_i),
+        .icache_address_i       (icache_address_i),
+        .icache_valid_o         (icache_valid_o),
+        .icache_data_o          (icache_data_o),
+        // Request Write Port to L2
+        .write_l2_valid         (write_l2_valid),
+        .write_l2_addr          (write_l2_addr),
+        .write_l2_data          (write_l2_data),
+        // Request Read Port to L2
+        .dcache_valid_i         (dcache_valid_i),
+        .dcache_address_i       (dcache_address_i),
+        // Update Port from L2
+        .dcache_valid_o         (dcache_valid_o),
+        .dcache_address_o       (dcache_address_o),
+        .dcache_data_o          (dcache_data_o)
     );
-    //////////////////////////////////////////////////
-    //                Caches' Subsection            //
-    //////////////////////////////////////////////////
+
+    
+    /////////////////////////////////////////////////
+    //               Caches' Subsection            //
+    /////////////////////////////////////////////////
     cache_top # (
-        .ADDR_BITS(ADDR_BITS),
-        .ISTR_DW(ISTR_DW),
-        .DATA_WIDTH(DATA_WIDTH),
-        .R_WIDTH(R_WIDTH),
-        .MICROOP_W(MICROOP_W),
-        .ROB_ENTRIES(ROB_ENTRIES),
-        .IC_ENTRIES(IC_ENTRIES),
-        .DC_ENTRIES(DC_ENTRIES),
-        .IC_DW(IC_DW),
-        .DC_DW(DC_DW),
-        .USE_AXI(0)
+        .USE_AXI                (0),
+        .ADDR_BITS              (ADDR_BITS),
+        .ISTR_DW                (ISTR_DW),
+        .DATA_WIDTH             (DATA_WIDTH),
+        .R_WIDTH                (R_WIDTH),
+        .MICROOP_W              (MICROOP_W),
+        .ROB_ENTRIES            (ROB_ENTRIES),
+        .IC_ENTRIES             (IC_ENTRIES),
+        .DC_ENTRIES             (DC_ENTRIES),
+        .IC_DW                  (IC_DW),
+        .DC_DW                  (DC_DW),
+        .AXI_AW                 (32),
+        .AXI_DW                 (32)
     ) caches_top (
-        .clk(clk),
-        .resetn(resetn),
+        .clk                    (clk),
+        .resetn                 (rst_n),
 
         .icache_current_pc      (current_pc),
         .icache_hit_icache      (hit_icache),
         .icache_miss_icache     (miss_icache),
         .icache_half_fetch      (half_fetch),
         .icache_instruction_out (fetched_data),
-
         .dcache_output_used     (ld_st_output_used),
         .dcache_load_valid      (cache_load_valid),
         .dcache_load_address    (cache_load_addr),
         .dcache_load_dest       (cache_load_dest),
         .dcache_load_microop    (cache_load_microop),
         .dcache_load_ticket     (cache_load_ticket),
-        .dcache_store_valid     (cache_store_valid),
+        .dcache_store_valid     (cache_store_cached),
         .dcache_store_address   (cache_store_addr),
         .dcache_store_data      (cache_store_data),
         .dcache_store_microop   (cache_store_microop),
@@ -199,17 +238,17 @@ module module_top (
 
         // icache
         .valid_out              (icache_valid_i),
-        .ready_in               (icache_valid_o),
         .address_out            (icache_address_i),
+        .ready_in               (icache_valid_o),
         .data_in                (icache_data_o),
-        //Request Write Port to L2
-        .write_l2_valid         (write_l2_valid),
-        .write_l2_addr          (write_l2_addr),
-        .write_l2_data          (write_l2_data),
-        //Request Read Port to L2
+        // Request Write Port to L2
+        .write_l2_valid         (write_l2_valid_c),
+        .write_l2_addr          (write_l2_addr_c),
+        .write_l2_data          (write_l2_data_c),
+        // Request Read Port to L2
         .request_l2_valid       (dcache_valid_i),
         .request_l2_addr        (dcache_address_i),
-        //Update Port from L2
+        // Update Port from L2
         .update_l2_valid        (dcache_valid_o),
         .update_l2_addr         (dcache_address_o),
         .update_l2_data         (dcache_data_o)
