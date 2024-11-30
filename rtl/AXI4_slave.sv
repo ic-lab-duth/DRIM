@@ -1,18 +1,21 @@
 // Only incremented bursts are implemented
-
+`ifdef MODEL_TECH
+    `include "structs.sv"
+`endif
+ 
 module AXI4_slave #(
-  parameter ID_W      = 4,    //! Number of Transaction ID bits
-  parameter ADDR_W    = 32,   //! Number of Address bits  
-  parameter AXI_DW    = 32,   //! Number of AXI Data bits
-  parameter RESP_W    = 2,    //! Number of Response bits
-  parameter NATIVE_DW = 256,  //! Number of Left-side Data bits
+  parameter ID_W      = 4,
+  parameter ADDR_W    = 32,
+  parameter AXI_DW    = 32,
+  parameter RESP_W    = 2,
+  parameter NATIVE_DW = 256,
   // local parameters
-  localparam NBYTES   = AXI_DW/8,                           //! Number of Bytes per word.
-  localparam NTRANSF  = NATIVE_DW/AXI_DW,                   //! Required number of transfers per transaction.
-  localparam LEN_W    = (NTRANSF==1) ? 1 : $clog2(NTRANSF)  //! Required number of bits for the write and read_index to count the number of transfers.
+  localparam NBYTES   = AXI_DW/8,
+  localparam NTRANSF  = NATIVE_DW/AXI_DW,
+  localparam LEN_W    = (NTRANSF==1) ? 1 : $clog2(NTRANSF)
 )(
-  input logic aclk_i,             //! AXI clock
-  input logic aresetn_i,          //! Active LOW reset signal
+  input logic aclk_i,
+  input logic aresetn_i,
 
   // Native signals
   output logic                  nat_write_valid_o,
@@ -24,49 +27,45 @@ module AXI4_slave #(
   input  logic                  nat_read_valid_i,
   input  logic [ADDR_W-1:0]     nat_read_addr_i,
   input  logic [NATIVE_DW-1:0]  nat_read_data_i,
-  //! @end
 
-  //! @virtualbus AXI_Master @dir out AXI Write and Read channels
   // write request channel
-  //! AWVALID is HIGH when the master holds valid request signals for a slave.
   input  logic                    s_axi_awvalid_i,  
-  output logic                    s_axi_awready_o,  //! AWREADY is HIGH when the slave can accept a request.
-  input  logic [ADDR_W-1:0]       s_axi_awaddr_i,   //! Holds the address of the first transfer in a Write transaction.
-  input  burst_type               s_axi_awburst_i,  //! Describes how the address increments between transfers in a transaction. In this case always Incrimental.
-  input  logic [7:0]              s_axi_awlen_i,    //! The total number of transfers in a transaction, encoded as: Length=AxLEN+1. In this case always 7.
-  input  logic [2:0]              s_axi_awsize_i,   //! Indicates the maximum number of bytes in each data transfer within a transaction. In this case always 4.
-  input  logic [ID_W-1:0]         s_axi_awid_i,     //! Transaction ID. In this case every master has a fixed ID selected by the ID_SEL parameter.
+  output logic                    s_axi_awready_o,
+  input  logic [ADDR_W-1:0]       s_axi_awaddr_i,
+  input  logic [1:0]               s_axi_awburst_i,
+  input  logic [7:0]              s_axi_awlen_i,
+  input  logic [2:0]              s_axi_awsize_i,
+  input  logic [ID_W-1:0]         s_axi_awid_i,
 
   // write data channel
-  input  logic                    s_axi_wvalid_i,   //! WVALID is HIGH when the master holds valid data signals for a slave.
-  output logic                    s_axi_wready_o,   //! WREADY is HIGH when the slave can accept a request.
-  input  logic [AXI_DW-1:0]       s_axi_wdata_i,    //! Write data.
-  input  logic                    s_axi_wlast_i,    //! Indicates the last write data transfer of a transaction.
-  input  logic [NBYTES-1:0]       s_axi_wstrb_i,    //! Indicates which byte lanes of WDATA contain valid data in a write transaction.
+  input  logic                    s_axi_wvalid_i,
+  output logic                    s_axi_wready_o,
+  input  logic                    s_axi_wlast_i,
+  input  logic [AXI_DW-1:0]       s_axi_wdata_i,
+  input  logic [NBYTES-1:0]       s_axi_wstrb_i,
 
   // write response channel
-  output logic [ID_W-1:0]         s_axi_bid_o,      //! Write Response ID.
-  output logic [RESP_W-1:0]       s_axi_bresp_o,    //! Returns success or failure of the transaction.
-  output logic                    s_axi_bvalid_o,   //! BVALID is HIGH when a slave holds valid Response signals for the master.
-  input  logic                    s_axi_bready_i,   //! BREADY is HIGH when the master can accept a Response.
+  output logic [ID_W-1:0]         s_axi_bid_o,
+  output logic [RESP_W-1:0]       s_axi_bresp_o,
+  output logic                    s_axi_bvalid_o,
+  input  logic                    s_axi_bready_i,
 
   // read request channel
-  output logic                    s_axi_arready_o,  //! ARREADY is HIGH when a slave can accept a request.
-  input  logic                    s_axi_arvalid_i,  //! ARVALID is HIGH when the master holds valid Request signals for a slave.
-  input  logic [ADDR_W-1:0]       s_axi_araddr_i,   //! Holds the address of the first transfer in a Read transaction.
-  input  burst_type               s_axi_arburst_i,  //! Describes how the address increments between transfers in a transaction. In this case always Incrimental.
-  input  logic [7:0]              s_axi_arlen_i,    //! The total number of transfers in a transaction, encoded as: Length=AxLEN+1. In this case always 7.
-  input  logic [2:0]              s_axi_arsize_i,   //! Indicates the maximum number of bytes in each data transfer within a transaction. In this case always 4.
-  input  logic [ID_W-1:0]         s_axi_arid_i,     //! Transaction ID. In this case every master has a fixed ID selected by the ID_SEL parameter.
+  output logic                    s_axi_arready_o,
+  input  logic                    s_axi_arvalid_i,
+  input  logic [ADDR_W-1:0]       s_axi_araddr_i,
+  input  logic [1:0]               s_axi_arburst_i,
+  input  logic [7:0]              s_axi_arlen_i,
+  input  logic [2:0]              s_axi_arsize_i,
+  input  logic [ID_W-1:0]         s_axi_arid_i,
 
   // read data channel
-  output logic [AXI_DW-1:0]       s_axi_rdata_o,    //! Read data.
-  output logic                    s_axi_rlast_o,    //! Indicates the last read data transfer of a transaction.
-  output logic [ID_W-1:0]         s_axi_rid_o,      //! Read Response ID.
-  output logic [RESP_W-1:0]       s_axi_rresp_o,    //! Returns success or failure of the transaction.
-  output logic                    s_axi_rvalid_o,   //! RVALID is HIGH when a slave holds valid Response signals for the master.
-  input  logic                    s_axi_rready_i    //! RREADY is HIGH when the master can accept a Response.
-  //! @end
+  output logic [AXI_DW-1:0]       s_axi_rdata_o,
+  output logic                    s_axi_rlast_o,
+  output logic [ID_W-1:0]         s_axi_rid_o,
+  output logic [RESP_W-1:0]       s_axi_rresp_o,
+  output logic                    s_axi_rvalid_o,
+  input  logic                    s_axi_rready_i
 );
 
 typedef enum logic [1:0] { W_IDLE, W_AXI_WDATA, W_AXI_BRESP, W_NAT_UPDATE } write_fsm;
