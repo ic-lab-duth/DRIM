@@ -1,3 +1,5 @@
+`ifndef __STRUCTS_SV__
+`define __STRUCTS_SV__
 /*
 * @info Processor Top Level
 * @info Sub-Modules: IF.sv, ID.sv, Issue.sv, execution.sv, ROB.sv
@@ -147,3 +149,4 @@ typedef struct packed {
     logic [ 2 : 0] ticket      ;
 } predictor_update;
 //---------------------------------------------------------------------------------------
+`endif

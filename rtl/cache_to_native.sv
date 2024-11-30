@@ -1,3 +1,6 @@
+`ifdef MODEL_TECH
+    `include "structs.sv"
+`endif
 module cache_to_native #(
   parameter ADDR_WIDTH = 32,
   parameter DATA_WIDTH = 256

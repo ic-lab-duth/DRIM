@@ -1,5 +1,7 @@
 -sv
 
+../rtl/enums.sv
+../rtl/structs.sv
 ../rtl/branch_resolver.sv
 ../rtl/btb.sv
 ../rtl/decoder.sv
@@ -23,11 +25,17 @@
 ../rtl/register_file.sv
 ../rtl/rob.sv
 ../rtl/module_top.sv
-../rtl/enum.sv
 ../rtl/status_counters.sv
 ../rtl/rr.sv
 ../rtl/rat.sv
 ../rtl/free_list.sv
+
+../rtl/main_memory_top.sv
+../rtl/cache_top.sv
+../rtl/AXI4_master.sv
+../rtl/AXI4_slave.sv
+../rtl/cache_to_native.sv
+../rtl/native_to_axiLite.sv
 
 ../rtl/arbiter.sv
 ../rtl/and_or_mux.sv
@@ -48,7 +56,6 @@
 ../rtl/main_memory.sv
 ../rtl/onehot_detect.sv
 ../rtl/sram.sv
-../rtl/structs.sv
 ../rtl/vga_controller.sv
 ../rtl/wait_buffer.sv
 
