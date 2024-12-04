@@ -1,3 +1,7 @@
+`ifdef MODEL_TECH
+    `include "structs.sv"
+`endif
+ 
 module main_memory_top #(
   parameter USE_AXI         = 0,
   parameter L2_BLOCK_DW     = 128 ,
@@ -7,7 +11,7 @@ module main_memory_top #(
   parameter DCACHE_BLOCK_DW = 256 ,
   parameter REALISTIC       = 1   ,
   parameter DELAY_CYCLES    = 50  ,
-  parameter FILE_NAME       = "memory.mem",
+  parameter FILE_NAME       = "memory.txt",
   parameter ID_W            = 4,
   parameter ADDR_W          = 32,
   parameter AXI_DW          = 32,
@@ -40,7 +44,7 @@ module main_memory_top #(
   input   logic                 ic_s_axi_awvalid,
   output  logic                 ic_s_axi_awready,
   input   logic [ADDR_W-1:0]    ic_s_axi_awaddr,
-  input   burst_type            ic_s_axi_awburst,
+  input   logic [1:0]            ic_s_axi_awburst,
   input   logic [7:0]           ic_s_axi_awlen,
   input   logic [2:0]           ic_s_axi_awsize,
   input   logic [ID_W-1:0]      ic_s_axi_awid,
@@ -56,7 +60,7 @@ module main_memory_top #(
   output  logic                 ic_s_axi_arready,
   input   logic                 ic_s_axi_arvalid,
   input   logic [ADDR_W-1:0]    ic_s_axi_araddr,
-  input   burst_type            ic_s_axi_arburst,
+  input   logic [1:0]            ic_s_axi_arburst,
   input   logic [7:0]           ic_s_axi_arlen,
   input   logic [2:0]           ic_s_axi_arsize,
   input   logic [ID_W-1:0]      ic_s_axi_arid,
@@ -70,7 +74,7 @@ module main_memory_top #(
   input   logic                 dc_s_axi_awvalid,
   output  logic                 dc_s_axi_awready,
   input   logic [ADDR_W-1:0]    dc_s_axi_awaddr,
-  input   burst_type            dc_s_axi_awburst,
+  input   logic [1:0]            dc_s_axi_awburst,
   input   logic [7:0]           dc_s_axi_awlen,
   input   logic [2:0]           dc_s_axi_awsize,
   input   logic [ID_W-1:0]      dc_s_axi_awid,
@@ -86,7 +90,7 @@ module main_memory_top #(
   output  logic                 dc_s_axi_arready,
   input   logic                 dc_s_axi_arvalid,
   input   logic [ADDR_W-1:0]    dc_s_axi_araddr,
-  input   burst_type            dc_s_axi_arburst,
+  input   logic [1:0]            dc_s_axi_arburst,
   input   logic [7:0]           dc_s_axi_arlen,
   input   logic [2:0]           dc_s_axi_arsize,
   input   logic [ID_W-1:0]      dc_s_axi_arid,
@@ -123,7 +127,7 @@ main_memory #(
   .DCACHE_BLOCK_DW(DCACHE_BLOCK_DW),
   .REALISTIC      (REALISTIC),
   .DELAY_CYCLES   (DELAY_CYCLES),
-  .FILE_NAME      ("memory.mem")
+  .FILE_NAME      (FILE_NAME)
 ) main_memory (
   .clk              (clk_i             ),
   .rst_n            (rst_n_i           ),

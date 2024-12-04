@@ -1,3 +1,5 @@
+`ifndef __ENUMS_SV__
+`define __ENUMS_SV__
 //Used for Debugging Purposes
 //Enumeration for full-length Instructions
 typedef enum logic [6:0] {
@@ -120,5 +122,5 @@ CSWSP,
 CFSWSP,
 CIDLE
 } detected_instr_c;
-
 typedef enum logic [1:0] {FIXED, INCR, WRAP, NOOP} burst_type;
+`endif
