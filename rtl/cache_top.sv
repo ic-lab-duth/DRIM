@@ -1,6 +1,7 @@
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
+ 
 module cache_top #(
   parameter ADDR_BITS     = 32,  // default: 32
   parameter ISTR_DW       = 32,  // default: 32
@@ -10,10 +11,11 @@ module cache_top #(
   parameter ROB_ENTRIES   = 8,   // default: 8
   localparam ROB_TICKET_W = $clog2(ROB_ENTRIES), //default: DO NOT MODIFY
 
-  parameter IC_ENTRIES = 32,
-  parameter DC_ENTRIES = 32,
-  parameter IC_DW      = 256,
-  parameter DC_DW      = 256,
+  parameter ASSOCIATIVITY = 2,
+  parameter IC_ENTRIES    = 32,
+  parameter DC_ENTRIES    = 32,
+  parameter IC_DW         = 256,
+  parameter DC_DW         = 256,
 
   parameter USE_AXI    = 0,
   parameter AXI_AW     = 32,
@@ -70,7 +72,7 @@ module cache_top #(
   output logic                  ic_m_axi_awvalid,
   input  logic                  ic_m_axi_awready,
   output logic [AXI_AW-1:0]     ic_m_axi_awaddr,
-  output burst_type             ic_m_axi_awburst,
+  output logic [1:0]             ic_m_axi_awburst,
   output logic [7:0]            ic_m_axi_awlen,
   output logic [2:0]            ic_m_axi_awsize,
   output logic [3:0]            ic_m_axi_awid,
@@ -86,7 +88,7 @@ module cache_top #(
   input  logic                  ic_m_axi_arready,
   output logic                  ic_m_axi_arvalid,
   output logic [AXI_AW-1:0]     ic_m_axi_araddr,
-  output burst_type             ic_m_axi_arburst,
+  output logic [1:0]             ic_m_axi_arburst,
   output logic [7:0]            ic_m_axi_arlen,
   output logic [2:0]            ic_m_axi_arsize,
   output logic [3:0]            ic_m_axi_arid,
@@ -100,7 +102,7 @@ module cache_top #(
   output logic                  dc_m_axi_awvalid,
   input  logic                  dc_m_axi_awready,
   output logic [AXI_AW-1:0]     dc_m_axi_awaddr,
-  output burst_type             dc_m_axi_awburst,
+  output logic [1:0]             dc_m_axi_awburst,
   output logic [7:0]            dc_m_axi_awlen,
   output logic [2:0]            dc_m_axi_awsize,
   output logic [3:0]            dc_m_axi_awid,
@@ -116,7 +118,7 @@ module cache_top #(
   input  logic                  dc_m_axi_arready,
   output logic                  dc_m_axi_arvalid,
   output logic [AXI_AW-1:0]     dc_m_axi_araddr,
-  output burst_type             dc_m_axi_arburst,
+  output logic [1:0]             dc_m_axi_arburst,
   output logic [7:0]            dc_m_axi_arlen,
   output logic [2:0]            dc_m_axi_arsize,
   output logic [3:0]            dc_m_axi_arid,
@@ -171,7 +173,7 @@ wire [DC_DW-1:0]      dc_nat_to_axi_upd_data;
 icache #(
   .ADDRESS_BITS       (ADDR_BITS),
   .ENTRIES            (IC_ENTRIES),
-  .ASSOCIATIVITY      (2),
+  .ASSOCIATIVITY      (ASSOCIATIVITY),
   .BLOCK_WIDTH        (IC_DW),
   .INSTR_BITS         (ISTR_DW)
 ) instuction_cache (
@@ -202,7 +204,7 @@ data_cache #(
   .ENTRIES              (DC_ENTRIES),
   .BLOCK_WIDTH          (DC_DW),
   .BUFFER_SIZES         (4),
-  .ASSOCIATIVITY        (2)
+  .ASSOCIATIVITY        (ASSOCIATIVITY)
 ) data_cache (
   .clk                  (clk),
   .rst_n                (resetn),
