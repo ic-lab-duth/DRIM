@@ -176,7 +176,7 @@ icache #(
   .ASSOCIATIVITY      (ASSOCIATIVITY),
   .BLOCK_WIDTH        (IC_DW),
   .INSTR_BITS         (ISTR_DW)
-) instuction_cache (
+) instruction_cache (
   .clk                (clk),
   .rst_n              (resetn),
   // processor side

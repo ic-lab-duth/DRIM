@@ -8,9 +8,9 @@ add wave -noupdate -radix unsigned /tb/module_top/top_processor/ifetch/predictor
 add wave -noupdate -radix unsigned /tb/module_top/top_processor/ifetch/predictor/ras/RAS_SIZE
 add wave -noupdate -radix unsigned /tb/module_top/top_processor/issue/SC_SIZE
 add wave -noupdate -radix unsigned /tb/module_top/top_processor/rob/ROB_SIZE
-add wave -noupdate -radix unsigned /tb/module_top/data_cache/load_buffer/LD_BF_SIZE
-add wave -noupdate -radix unsigned /tb/module_top/data_cache/store_buffer/ST_BF_SIZE
-add wave -noupdate -radix unsigned /tb/module_top/data_cache/wait_buffer/WT_BF_SIZE
+add wave -noupdate -radix unsigned /tb/module_top/caches_top/data_cache/load_buffer/LD_BF_SIZE
+add wave -noupdate -radix unsigned /tb/module_top/caches_top/data_cache/store_buffer/ST_BF_SIZE
+add wave -noupdate -radix unsigned /tb/module_top/caches_top/data_cache/wait_buffer/WT_BF_SIZE
 add wave -noupdate -divider Statistics
 add wave -noupdate -radix unsigned /tb/module_top/top_processor/issue/total_issues
 add wave -noupdate -radix unsigned /tb/module_top/top_processor/issue/dual_issues
@@ -56,15 +56,15 @@ add wave -noupdate /tb/module_top/top_processor/ifetch/next_pc
 add wave -noupdate /tb/module_top/top_processor/ifetch/old_pc
 add wave -noupdate /tb/module_top/top_processor/ifetch/half_access
 add wave -noupdate -divider ICache
-add wave -noupdate -radix hexadecimal /tb/module_top/icache/address
-add wave -noupdate /tb/module_top/icache/hit
-add wave -noupdate /tb/module_top/icache/miss
-add wave -noupdate /tb/module_top/icache/line_selector
-add wave -noupdate -radix binary /tb/module_top/icache/offset_selector
-add wave -noupdate /tb/module_top/icache/valid_o
-add wave -noupdate -radix hexadecimal /tb/module_top/icache/address_out
-add wave -noupdate /tb/module_top/icache/ready_in
-add wave -noupdate /tb/module_top/icache/data_in
+add wave -noupdate -radix hexadecimal /tb/module_top/caches_top/instruction_cache/address
+add wave -noupdate /tb/module_top/caches_top/instruction_cache/hit
+add wave -noupdate /tb/module_top/caches_top/instruction_cache/miss
+add wave -noupdate /tb/module_top/caches_top/instruction_cache/line_selector
+add wave -noupdate -radix binary /tb/module_top/caches_top/instruction_cache/offset_selector
+add wave -noupdate /tb/module_top/caches_top/instruction_cache/valid_o
+add wave -noupdate -radix hexadecimal /tb/module_top/caches_top/instruction_cache/address_out
+add wave -noupdate /tb/module_top/caches_top/instruction_cache/ready_in
+add wave -noupdate /tb/module_top/caches_top/instruction_cache/data_in
 add wave -noupdate -divider predictor
 add wave -noupdate /tb/module_top/top_processor/ifetch/predictor/pc_in
 add wave -noupdate -divider <NULL>
@@ -187,41 +187,41 @@ add wave -noupdate -divider {Load-Store Unit}
 add wave -noupdate /tb/module_top/top_processor/execution/load_store_unit/valid
 add wave -noupdate -childformat {{/tb/module_top/top_processor/execution/load_store_unit/input_data.destination -radix unsigned}} -subitemconfig {/tb/module_top/top_processor/execution/load_store_unit/input_data.destination {-height 15 -radix unsigned}} /tb/module_top/top_processor/execution/load_store_unit/input_data
 add wave -noupdate -divider {Data Cache}
-add wave -noupdate /tb/module_top/data_cache/load_valid
-add wave -noupdate /tb/module_top/data_cache/load_address
-add wave -noupdate -radix unsigned /tb/module_top/data_cache/load_dest
-add wave -noupdate /tb/module_top/data_cache/load_microop
+add wave -noupdate /tb/module_top/caches_top/data_cache/load_valid
+add wave -noupdate /tb/module_top/caches_top/data_cache/load_address
+add wave -noupdate -radix unsigned /tb/module_top/caches_top/data_cache/load_dest
+add wave -noupdate /tb/module_top/caches_top/data_cache/load_microop
 add wave -noupdate -divider <NULL>
-add wave -noupdate /tb/module_top/data_cache/store_valid
-add wave -noupdate /tb/module_top/data_cache/store_address
-add wave -noupdate /tb/module_top/data_cache/store_data
-add wave -noupdate /tb/module_top/data_cache/store_microop
+add wave -noupdate /tb/module_top/caches_top/data_cache/store_valid
+add wave -noupdate /tb/module_top/caches_top/data_cache/store_address
+add wave -noupdate /tb/module_top/caches_top/data_cache/store_data
+add wave -noupdate /tb/module_top/caches_top/data_cache/store_microop
 add wave -noupdate -divider <NULL>
-add wave -noupdate /tb/module_top/data_cache/serve
-add wave -noupdate /tb/module_top/data_cache/hit
-add wave -noupdate /tb/module_top/data_cache/served
-add wave -noupdate -childformat {{/tb/module_top/data_cache/served_output.destination -radix unsigned}} -subitemconfig {/tb/module_top/data_cache/served_output.destination {-height 15 -radix unsigned}} /tb/module_top/data_cache/served_output
-add wave -noupdate /tb/module_top/data_cache/block_picked
-add wave -noupdate /tb/module_top/data_cache/served_data
-add wave -noupdate -radix unsigned /tb/module_top/data_cache/offset_select
-add wave -noupdate /tb/module_top/data_cache/data_operation/input_block
-add wave -noupdate -radix unsigned -childformat {{{/tb/module_top/data_cache/data_operation/selector[8]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[7]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[6]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[5]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[4]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[3]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[2]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[1]} -radix unsigned} {{/tb/module_top/data_cache/data_operation/selector[0]} -radix unsigned}} -subitemconfig {{/tb/module_top/data_cache/data_operation/selector[8]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[7]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[6]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[5]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[4]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[3]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[2]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[1]} {-height 15 -radix unsigned} {/tb/module_top/data_cache/data_operation/selector[0]} {-height 15 -radix unsigned}} /tb/module_top/data_cache/data_operation/selector
-add wave -noupdate /tb/module_top/data_cache/data_operation/data_loaded_8
-add wave -noupdate /tb/module_top/data_cache/data_operation/data_loaded_16
-add wave -noupdate /tb/module_top/data_cache/data_operation/data_loaded_32
-add wave -noupdate /tb/module_top/data_cache/wt_ready
+add wave -noupdate /tb/module_top/caches_top/data_cache/serve
+add wave -noupdate /tb/module_top/caches_top/data_cache/hit
+add wave -noupdate /tb/module_top/caches_top/data_cache/served
+add wave -noupdate -childformat {{/tb/module_top/caches_top/data_cache/served_output.destination -radix unsigned}} -subitemconfig {/tb/module_top/caches_top/data_cache/served_output.destination {-height 15 -radix unsigned}} /tb/module_top/caches_top/data_cache/served_output
+add wave -noupdate /tb/module_top/caches_top/data_cache/block_picked
+add wave -noupdate /tb/module_top/caches_top/data_cache/served_data
+add wave -noupdate -radix unsigned /tb/module_top/caches_top/data_cache/offset_select
+add wave -noupdate /tb/module_top/caches_top/data_cache/data_operation/input_block
+add wave -noupdate -radix unsigned -childformat {{{/tb/module_top/caches_top/data_cache/data_operation/selector[8]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[7]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[6]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[5]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[4]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[3]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[2]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[1]} -radix unsigned} {{/tb/module_top/caches_top/data_cache/data_operation/selector[0]} -radix unsigned}} -subitemconfig {{/tb/module_top/caches_top/data_cache/data_operation/selector[8]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[7]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[6]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[5]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[4]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[3]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[2]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[1]} {-height 15 -radix unsigned} {/tb/module_top/caches_top/data_cache/data_operation/selector[0]} {-height 15 -radix unsigned}} /tb/module_top/caches_top/data_cache/data_operation/selector
+add wave -noupdate /tb/module_top/caches_top/data_cache/data_operation/data_loaded_8
+add wave -noupdate /tb/module_top/caches_top/data_cache/data_operation/data_loaded_16
+add wave -noupdate /tb/module_top/caches_top/data_cache/data_operation/data_loaded_32
+add wave -noupdate /tb/module_top/caches_top/data_cache/wt_ready
 add wave -noupdate -divider <NULL>
-add wave -noupdate /tb/module_top/data_cache/wait_buffer/saved_valid
-add wave -noupdate /tb/module_top/data_cache/wait_buffer/saved_is_store
-add wave -noupdate -expand /tb/module_top/data_cache/wait_buffer/saved_address
-add wave -noupdate /tb/module_top/data_cache/wait_buffer/saved_data
-add wave -noupdate /tb/module_top/data_cache/wait_buffer/saved_info
+add wave -noupdate /tb/module_top/caches_top/data_cache/wait_buffer/saved_valid
+add wave -noupdate /tb/module_top/caches_top/data_cache/wait_buffer/saved_is_store
+add wave -noupdate -expand /tb/module_top/caches_top/data_cache/wait_buffer/saved_address
+add wave -noupdate /tb/module_top/caches_top/data_cache/wait_buffer/saved_data
+add wave -noupdate /tb/module_top/caches_top/data_cache/wait_buffer/saved_info
 add wave -noupdate -divider <NULL>
-add wave -noupdate /tb/module_top/data_cache/request_l2_valid
-add wave -noupdate /tb/module_top/data_cache/request_l2_addr
-add wave -noupdate /tb/module_top/data_cache/update_l2_valid
-add wave -noupdate /tb/module_top/data_cache/update_l2_addr
-add wave -noupdate /tb/module_top/data_cache/update_l2_data
+add wave -noupdate /tb/module_top/caches_top/data_cache/request_l2_valid
+add wave -noupdate /tb/module_top/caches_top/data_cache/request_l2_addr
+add wave -noupdate /tb/module_top/caches_top/data_cache/update_l2_valid
+add wave -noupdate /tb/module_top/caches_top/data_cache/update_l2_addr
+add wave -noupdate /tb/module_top/caches_top/data_cache/update_l2_data
 add wave -noupdate -divider <NULL>
 add wave -noupdate -childformat {{/tb/module_top/top_processor/execution/branch_resolver/input_data.microoperation -radix binary}} -subitemconfig {/tb/module_top/top_processor/execution/branch_resolver/input_data.microoperation {-height 15 -radix binary}} /tb/module_top/top_processor/execution/branch_resolver/input_data
 add wave -noupdate /tb/module_top/top_processor/execution/branch_resolver/pr_update
@@ -237,7 +237,7 @@ add wave -noupdate /tb/module_top/top_processor/rob/counter
 add wave -noupdate /tb/module_top/top_processor/rob/counter_actual
 add wave -noupdate -divider <NULL>
 add wave -noupdate -divider {Main Memory}
-add wave -noupdate /tb/module_top/main_memory/ram
+add wave -noupdate /tb/module_top/main_memory_top/main_memory/ram
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {475 ns} 0}
 quietly wave cursor active 1
