@@ -64,7 +64,8 @@ module wait_buffer #(
     logic [DEPTH-1:0]                 saved_is_store, saved_valid;
 
     // #Internal Signals#
-    logic [    DEPTH-1:0] head, tail, peek, tail_reversed, stat_counter, arb_priority ;
+    logic [      DEPTH:0] stat_counter;
+    logic [    DEPTH-1:0] head, tail, peek, tail_reversed, arb_priority ;
     logic [    DEPTH-1:0] matched_search_main, matched_search_sec, matched, match_picked, forward_matched;
     logic                 pop, one_found, multi_found, microop_ok;
 
@@ -74,7 +75,7 @@ module wait_buffer #(
     buffer_mode mode;
 
     assign valid = ~stat_counter[0];
-    assign ready = ~stat_counter[DEPTH-1];
+    assign ready = ~(stat_counter[DEPTH-1] | stat_counter[DEPTH]);
     assign in_walk_mode = (mode==WALK);
 
     // Search in the Array
