@@ -55,6 +55,7 @@
 ../rtl/lrumore.sv
 ../rtl/main_memory.sv
 ../rtl/onehot_detect.sv
+../rtl/simple_fifo.sv
 ../rtl/sram.sv
 ../rtl/vga_controller.sv
 ../rtl/wait_buffer.sv
