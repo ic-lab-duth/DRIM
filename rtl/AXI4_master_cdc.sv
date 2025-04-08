@@ -1,0 +1,368 @@
+//! During a write transaction, the master holds the required signals with the information for the transaction.
+//! When the AWVALID-AWREADY handshake happens, it starts sending the data until it sents the last transfer of the transaction.
+//! After that, it waits for the BRESP signal that informs the master whether or not the transaction was successful.
+//! This master has to wait until it gets a response for the latest write transaction to initialize another request.
+
+//! @title Simple valid.ready to AXI4 Master with CDC FIFOs
+//! @author Giorgos Pelekidis
+//! @author Ioannis Dingolis
+
+// Instructions on how to use CDC FIFOs: Read description from file cdc_fifo_gray.sv
+// Reset mechanism for CDC FIFOs needs to be implemented correctly.
+// Module rstgen.sv can be used as a proper reset mechanism. Because it's 
+// technology dependent use in simulation the file tc_clk.sv and on implementation with 
+// Xilinx FPGAs the file tc_clk_xilinx.sv. Furthermore, timing constraints need to be
+// implemented. Check CDC FIFO's description on how to implement those (using dont_touch,
+// keep_hierarchy, set_max_delay and set_false_path -hold for XDC equivalent constraints).
+
+`ifdef MODEL_TECH
+    `include "structs.sv"
+`endif
+module AXI4_master_cdc #(
+  parameter ID_SEL        = 0,    //! Master's ID
+  parameter ID_WIDTH      = 4,    //! Number of Transaction ID bits
+  parameter ADDR_WIDTH    = 32,   //! Number of Address bits  
+  parameter DATA_WIDTH    = 32,   //! Number of AXI Data bits
+  parameter RESP_WIDTH    = 2,    //! Number of Response bits
+  parameter LS_DATA_WIDTH = 256,  //! Number of Left-side Data bits
+  // local parameters
+  localparam NBYTES       = DATA_WIDTH/8,                       //! Number of Bytes per word.
+  localparam NTRANSF      = LS_DATA_WIDTH/DATA_WIDTH,           //! Required number of transfers per transaction.
+  localparam LEN_W        = (NTRANSF==1) ? 1 : $clog2(NTRANSF) //! Required number of bits for the write and read_index to count the number of transfers.
+)(
+  input logic clk_intc_i,  // Side A (interconnect) clock 
+  input logic rst_intc_ni, // Side A reset. !! ASYNC assertion (1->0) & SYNC deassertion (0->1) to side A clk.
+  input logic clk_proc_i,  // Side B (processor) clock 
+  input logic rst_proc_ni, // Side B reset. !! ASYNC assertion (1->0) & SYNC deassertion (0->1) to side B clk.
+
+  // Left side signals
+  //! @virtualbus Valid-Ready_Interface @dir in Simple Valid-Ready Request and Return channels
+  input  logic [ADDR_WIDTH-1:0]    ls_address,    //! Memory Address for the transaction
+  input  logic [1:0]               ls_operation,  //! Write, Read or No operation
+
+  input  logic [LS_DATA_WIDTH-1:0] ls_data_in,    //! Write Data
+  input  logic                     ls_valid_in,   //! Valid Request signal
+  output logic                     ls_ready_out,  //! Ready Request signal
+
+  output logic [LS_DATA_WIDTH-1:0] ls_data_out,   //! Read Data
+  output logic                     ls_valid_out,  //! Valid Return signal
+  input  logic                     ls_ready_in,   //! Ready Return signal
+  //! @end
+
+  //! @virtualbus AXI_Master @dir out AXI Write and Read channels
+  // write request channel
+  //! AWVALID is HIGH when the master holds valid request signals for a slave.
+  output logic                    AWVALID,  
+  input  logic                    AWREADY,  //! AWREADY is HIGH when the slave can accept a request.
+  output logic [ADDR_WIDTH-1:0]   AWADDR,   //! Holds the address of the first transfer in a Write transaction.
+  output logic [1:0]              AWBURST,  //! Describes how the address increments between transfers in a transaction. In this case always Incrimental.
+  output logic [7:0]              AWLEN,    //! The total number of transfers in a transaction, encoded as: Length=AxLEN+1. In this case always 7.
+  output logic [2:0]              AWSIZE,   //! Indicates the maximum number of bytes in each data transfer within a transaction. In this case always 4.
+  output logic [ID_WIDTH-1:0]     AWID,     //! Transaction ID. In this case every master has a fixed ID selected by the ID_SEL parameter.
+
+  // write data channel
+
+  output logic                    WVALID,   //! WVALID is HIGH when the master holds valid data signals for a slave.
+  input  logic                    WREADY,   //! WREADY is HIGH when the slave can accept a request.
+  output logic [DATA_WIDTH-1:0]   WDATA,    //! Write data.
+  output logic                    WLAST,    //! Indicates the last write data transfer of a transaction.
+  output logic [NBYTES-1:0]       WSTRB,    //! Indicates which byte lanes of WDATA contain valid data in a write transaction.
+
+  // write response channel
+  input  logic [ID_WIDTH-1:0]     BID,      //! Write Response ID.
+  input  logic [RESP_WIDTH-1:0]   BRESP,    //! Returns success or failure of the transaction.
+  input  logic                    BVALID,   //! BVALID is HIGH when a slave holds valid Response signals for the master.
+  output logic                    BREADY,   //! BREADY is HIGH when the master can accept a Response.
+
+  // read request channel
+  input  logic                    ARREADY,  //! ARREADY is HIGH when a slave can accept a request.
+  output logic                    ARVALID,  //! ARVALID is HIGH when the master holds valid Request signals for a slave.
+  output logic [ADDR_WIDTH-1:0]   ARADDR,   //! Holds the address of the first transfer in a Read transaction.
+  output logic [1:0]              ARBURST,  //! Describes how the address increments between transfers in a transaction. In this case always Incrimental.
+  output logic [7:0]              ARLEN,    //! The total number of transfers in a transaction, encoded as: Length=AxLEN+1. In this case always 7.
+  output logic [2:0]              ARSIZE,   //! Indicates the maximum number of bytes in each data transfer within a transaction. In this case always 4.
+  output logic [ID_WIDTH-1:0]     ARID,     //! Transaction ID. In this case every master has a fixed ID selected by the ID_SEL parameter.
+
+  // read data channel
+  input  logic [DATA_WIDTH-1:0]   RDATA,    //! Read data.
+  input  logic                    RLAST,    //! Indicates the last read data transfer of a transaction.
+  input  logic [ID_WIDTH-1:0]     RID,      //! Read Response ID.
+  input  logic [RESP_WIDTH-1:0]   RRESP,    //! Returns success or failure of the transaction.
+  input  logic                    RVALID,   //! RVALID is HIGH when a slave holds valid Response signals for the master.
+  output logic                    RREADY    //! RREADY is HIGH when the master can accept a Response.
+  //! @end
+);
+
+// loop counters
+integer i1, i2, i3; //! Loop counter.
+
+////////////////////////////
+//    Signal definition   //
+////////////////////////////
+
+//! AW-channel control signals.
+logic                   awpending;
+logic [ADDR_WIDTH-1:0]  awaddr;
+logic                   awvalid;
+//! W-channel control signals.
+logic [DATA_WIDTH-1:0]  wdata ;
+logic                   wvalid;
+logic [NBYTES-1    :0]  wstrb ;
+//! AR-channel control signals.
+logic                   arpending;
+logic [ADDR_WIDTH-1:0]  araddr;
+logic                   arvalid;
+
+// AXI related signals
+logic [1:0]           burst;  //! Shared Burst type-signal assigned to both AW-channel and AR-channel.
+logic [2          :0] size;   //! Shared transfer Size-type signal assigned to both AWSIZE and ARSIZE.
+logic [7          :0] len;    //! Shared transaction Length signal assigned to both AWLEN and ARLEN.     
+logic [ID_WIDTH-1 :0] id_sel; //! Stores a constant ID for each master depending on the ID_SEL parameter.
+
+// request fifo
+logic req_ready;   //! Request-fifo full.
+logic req_valid;  //! Request-fifo req_valid.
+logic req_push;   //! Request-fifo push.
+logic req_pop;    //! Request-fifo pop.
+logic [LS_DATA_WIDTH+ADDR_WIDTH+1:0] req_fifo_in; //! Request-fifo data in.
+logic [LS_DATA_WIDTH+ADDR_WIDTH+1:0] req_fifo_out; //! Request-fifo data out.
+
+// retrun fifo
+logic ret_ready;   //! Return-fifo full signal. 
+logic ret_valid;  //! Return-fifo empty signal. 
+logic ret_push;   //! Return-fifo push signal. 
+logic ret_pop;    //! Return-fifo pop signal.
+logic [LS_DATA_WIDTH-1:0] ret_data_in;  //! Return-fifo data in.
+logic [LS_DATA_WIDTH-1:0] ret_data_out; //! Return-fifo data out.
+
+// return fifo assist signals
+logic [RESP_WIDTH-1:0] resp_keep;     //! Holds the B or R response in case of a double push from both channels. (NOT IMPLEMENTED CORRECTLY)
+logic                  ret_push_flag; //! Helps delay the push signal by one cycle.
+
+// word fussion and fission buffers and buffer indexing
+logic [DATA_WIDTH-1:0] write_data_buffer [NTRANSF]; //! Stores the incoming 256-bit write data, that later get seperated to 32-bit words for the 8-transfer AXI transactions.
+logic [DATA_WIDTH-1:0] read_data_buffer  [NTRANSF]; //! Stores the 8 incoming 32-bit read words to a 256-bit line that gets sent out from the Left-side interface.
+logic [LEN_W-1:0] write_index;                      //! Index that helps read the 32-bit words from the write_data_buffer.
+logic [LEN_W-1:0] read_index;                       //! Index that helps store the 32-bit words to the read_data_buffer.
+
+////////////////////////////
+//    Signal assignment   //
+////////////////////////////
+
+// AXI related signals
+assign len    = NTRANSF-1;
+assign size   = $clog2(NBYTES);
+assign burst  = 2'b01;
+assign id_sel = ID_SEL;
+
+// word fussion and fission buffers and buffer indexing
+always_ff @( posedge clk_intc_i ) begin : Write_index_increment //! - When a WVALID-WREADY handshake takes place, the index is incremented by 1 to read the next word from the write_data_buffer.
+  if      (!rst_intc_ni)                  write_index <= 0;
+  else if (WVALID && WREADY && WLAST) write_index <= 0;
+  else if (WVALID && WREADY)          write_index <= write_index + 1;
+end
+
+always_ff @( posedge clk_intc_i ) begin : Update_write_data_buffer  //! - Checks if the next entry in the Request-fifo is a write request and then it updates the write_data_buffer.
+  if (!rst_intc_ni) 
+    write_data_buffer <= '{default:0};
+  else if (req_fifo_out[1:0] == 2'b10 && req_valid && !awpending)
+    for (i1=0; i1<NTRANSF; i1++)
+      write_data_buffer[i1] <= req_fifo_out[(i1*DATA_WIDTH)+ADDR_WIDTH+2+:DATA_WIDTH];
+end
+
+always_ff @( posedge clk_intc_i ) begin : Read_index_increment //! - When a RVALID-RREADY handshake takes place, the index is incremented by 1 to store the next word to the read_data_buffer.
+  if      (!rst_intc_ni)                  read_index <= 0;
+  else if (RVALID && RREADY && RLAST) read_index <= 0;
+  else if (RVALID && RREADY)          read_index <= read_index + 1;
+end
+
+always_ff @( posedge clk_intc_i ) begin : Update_read_data_buffer //! - Reads each 32-bit word from the Read data channel and stores them in the read_data_buffer according to the read_index.
+  if (!rst_intc_ni) read_data_buffer             <= '{default:0};
+  else          read_data_buffer[read_index] <= RDATA;
+end
+
+// request fifo
+always_comb begin : Request_fifo_pop  //! - When a AxVALID-AxREADY handshake takes place, the request-fifo gets popped.
+  if      (req_valid && req_fifo_out[1:0]==2'b10 && AWVALID && AWREADY) req_pop = 1;
+  else if (req_valid && req_fifo_out[1:0]==2'b01 && ARVALID && ARREADY) req_pop = 1;
+  else                                                                   req_pop = 0;
+end
+assign req_push     = (ls_valid_in && ls_ready_out);
+assign req_fifo_in  = {ls_data_in, ls_address, ls_operation};
+
+// return fifo
+always_ff @( posedge clk_intc_i ) begin : blockName
+  if      (!rst_intc_ni)                  ret_push <= 0;
+  else if (RLAST && RVALID && RREADY) ret_push <= 1;
+  else                                ret_push <= 0;
+end
+always_comb begin : return_fifo_data_in //! - **ret_data_in** gets assigned the comlete **read_data_buffer** word and the **resp_keep** value.
+  for (i3=0; i3<NTRANSF; i3++) begin 
+    ret_data_in[(i3*DATA_WIDTH)+:DATA_WIDTH] = read_data_buffer[i3];
+  end
+end
+assign ret_pop = ls_valid_out & ls_ready_in;
+
+
+////////////////////////////
+//       Sub-modules      //
+////////////////////////////
+
+//! FIFO that stores the incoming requests from the Left-side Interface.
+cdc_fifo_gray #(
+  .WIDTH (LS_DATA_WIDTH+ADDR_WIDTH+2),
+  .LOG_DEPTH (1), // Should be equal to 3
+  .SYNC_STAGES (2)
+) req_cdc_fifo (
+  .src_rst_ni (rst_proc_ni),
+  .src_clk_i (clk_proc_i),
+  .src_data_i (req_fifo_in),
+  .src_valid_i (req_push),
+  .src_ready_o (req_ready),
+  .dst_rst_ni (rst_intc_ni),
+  .dst_clk_i (clk_intc_i),
+  .dst_data_o (req_fifo_out),
+  .dst_valid_o (req_valid),
+  .dst_ready_i (req_pop)
+);
+
+// Return fifo
+//! FIFO that stores returning responses and data to send to the Left-side Interface.
+cdc_fifo_gray #(
+  .WIDTH (LS_DATA_WIDTH),
+  .LOG_DEPTH (1), // Should be equal to 3
+  .SYNC_STAGES (2)
+) ret_cdc_fifo (
+  .src_rst_ni (rst_intc_ni),
+  .src_clk_i (clk_intc_i),
+  .src_data_i (ret_data_in),
+  .src_valid_i (ret_push),
+  .src_ready_o (ret_ready),
+  .dst_rst_ni (rst_proc_ni),
+  .dst_clk_i (clk_proc_i),
+  .dst_data_o (ret_data_out),
+  .dst_valid_o (ret_valid),
+  .dst_ready_i (ret_pop)
+);
+
+////////////////////////////
+//        AXI logic       //
+////////////////////////////
+
+// WRITE REQUEST CHANNEL
+//! - When **awpending** is HIGH, a transaction is taking place.
+//! - **awaddr** holds the address of each transaction and gets assigned to **AWADDR**.
+//! - When the next entry in the **request-fifo** is a write request and there is no other transaction taking place, the **awpending** signal is raised and the **awaddr** signal gets updated with the new write transaction address.
+//! When the **WLAST** signal is raised to indicate the last transfer of the transaction, the **awpending** signal drops to 0.
+always_ff @(posedge clk_intc_i) begin : awpending_and_awaddr_control 
+  if (!rst_intc_ni) begin
+    awpending <= 0;
+    awaddr    <= 0;
+  end else if (req_valid && req_fifo_out[1:0]==2'b10 || awpending) begin
+    awpending <= (BVALID && BREADY) ? 0 : 1;
+    awaddr    <= req_fifo_out[ADDR_WIDTH+1:2];
+  end
+end
+
+//! - The **awvalid** signal gets assigned to **AWVALID**.
+//! - When the next entry in the **request-fifo** is a write request and there is no other pending write transaction, the **awvalid** signal gets raised.
+always_ff @( posedge clk_intc_i ) begin : awvalid_control
+  if (!rst_intc_ni)                                            
+    awvalid <= 0;
+  else if (AWVALID && AWREADY)                                  
+    awvalid <= 0;
+  else if (req_valid && req_fifo_out[1:0]==2'b10 && !awpending && ret_ready)
+    awvalid <= 1;
+end
+
+assign AWID     = id_sel;
+assign AWADDR   = awaddr;
+assign AWLEN    = len;
+assign AWSIZE   = size;
+assign AWBURST  = burst;
+assign AWVALID  = awvalid;
+
+
+// WRITE DATA CHANNEL
+//! - The **wvalid** signal gets assigned to **WVALID**.
+//! - It gets raised when a **AWVALID**-**AWREADY** handshake takes place and drops when the last transfer of the transaction is writen.
+always_ff @( posedge clk_intc_i ) begin : wvalid_control
+  if (!rst_intc_ni) wvalid <= 0;
+  else if (WVALID && WREADY && WLAST) wvalid <= 0;
+  else if (AWVALID && AWREADY)        wvalid <= 1;
+  else if (awpending)                wvalid <= wvalid;
+end
+//! - Initialize **wstrb** with.
+always_comb begin 
+  for (i2=0; i2<NBYTES; i2++) begin wstrb[i2] = 1; end
+end
+assign wdata = write_data_buffer[write_index];
+
+assign WVALID   = wvalid;
+assign WDATA    = wdata;
+assign WSTRB    = wstrb;
+assign WLAST    = (write_index == len);
+
+
+// WRITE RESPONSE CHANNEL
+//! - When BVALID is HIGH and the Return-fifo is not full, the **BREADY** signal is raised.
+always_ff @(posedge clk_intc_i) begin : bready_control
+  if      (!rst_intc_ni)            BREADY <= 0;
+  else if (BVALID && BREADY)    BREADY <= 0;
+  else if (BVALID && ret_ready) BREADY <= 1;
+end
+
+
+// READ REQUEST CHANNEL
+//! - When **arpending** is HIGH, a transaction is taking place.
+//! - **araddr** holds the address of each transaction and gets assigned to ARADDR.
+//! - When the next entry in the Request-fifo is a read request and there is no other transaction taking place, the arpending signal is raised and the araddr signal gets updated with the new read transaction address.
+//! When the RLAST signal is raised to indicate the last transfer of the transaction, the arpending signal drops to 0.
+always_ff @(posedge clk_intc_i) begin : arpending_and_araddr_control
+  if (!rst_intc_ni) begin
+    arpending <= 0;
+    araddr    <= 0;
+  end else if (req_valid && req_fifo_out[1:0]==2'b01 || arpending) begin
+    arpending <= (RVALID && RREADY && RLAST) ? 0 : 1;
+    araddr    <= req_fifo_out[ADDR_WIDTH+1:2];
+  end else begin
+    arpending <= 0;
+    araddr    <= 0;
+  end
+end
+
+//! - The **arvalid** signal gets assigned to ARVALID.
+//! - When the next entry in the Request-fifo is a read request and there is no other pending read transaction, the **arvalid** signal gets raised.
+always_ff @( posedge clk_intc_i ) begin : arvalid_control
+  if (!rst_intc_ni)
+    arvalid <= 0;
+  else if (ARVALID && ARREADY)                                  
+    arvalid <= 0;
+  else if (req_valid && req_fifo_out[1:0]==2'b01 && !arpending && ret_ready)
+    arvalid <= 1;
+end
+
+assign ARID     = id_sel;
+assign ARADDR   = araddr;
+assign ARLEN    = len;
+assign ARSIZE   = size;
+assign ARBURST  = burst;
+assign ARVALID  = arvalid;
+
+
+// READ DATA CHANNEL
+//! - When RVALID is HIGH and there is no BVALID signal nor the Return-fifo is full, the **RREADY** signal is raised.
+//! It then drops when there is a RVALID-RREADY handshake for the last transfer of the transaction.
+always_ff @(posedge clk_intc_i) begin : rready_control
+  if      (!rst_intc_ni)                       RREADY <= 0;
+  else if (RVALID && RLAST && RREADY)      RREADY <= 0;
+  else if (RVALID && !BVALID && ret_ready) RREADY <= 1;
+end
+
+
+// SIMPLE VALID.READY INTERFACE
+assign ls_ready_out = req_ready;
+assign ls_valid_out = ret_valid;
+assign ls_data_out  = ret_data_out[LS_DATA_WIDTH-1:0];
+
+endmodule
