@@ -5,9 +5,11 @@ vlib work
 
 vlog -f files_rtl.f -f files_sim.f +incdir+../rtl +incdir+../svas/ +define+INCLUDE_SVAS
 
-#vsim -novopt work.tb -onfinish "stop"
-# Option -novopt deprecated in newer versions
-vsim -voptargs="+acc" tb -onfinish "stop"
+# In case of AXI4_master_cdc.sv use, uncomment the following line.
+# vlog -f files_pulp.f +incdir+../rtl/pulp/include +incdir+../rtl
+
+vopt +acc tb -o tbopt
+vsim tbopt -onfinish "stop"
 
 log -r /*
 do wave.do

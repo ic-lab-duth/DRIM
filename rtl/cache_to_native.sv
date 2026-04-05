@@ -57,33 +57,35 @@ always_ff @(posedge clk) begin
 end
 
 assign wf_pop = wf_valid & pri_flag;
-fifo_duth # (
-  .DW   (DATA_WIDTH+ADDR_WIDTH),
-  .DEPTH(4)
+simple_fifo #(
+  .DATA_WIDTH (DATA_WIDTH+ADDR_WIDTH),
+  .DEPTH      (4)
 ) write_fifo (
-  .clk         (clk),
-  .rst         (!resetn),
-  .push_data   ({cache_write_addr, cache_write_data}),
-  .push        (cache_write_valid),
-  .ready       (wf_ready),
-  .pop_data    (wf_data_out),
-  .valid       (wf_valid),
-  .pop         (wf_pop)
+  .clk_i    (clk),
+  .rst_ni   (resetn),
+  .data_i   ({cache_write_addr, cache_write_data}),
+  .push_i   (cache_write_valid),
+  .ready_o  (wf_ready),
+  .data_o   (wf_data_out),
+  .valid_o  (wf_valid),
+  .pop_i    (wf_pop),
+  .usage_o  ()
 );
 
 assign rf_pop = rf_valid & ~pri_flag;
-fifo_duth # (
-  .DW   (ADDR_WIDTH),
-  .DEPTH(4)
+simple_fifo #(
+  .DATA_WIDTH (ADDR_WIDTH),
+  .DEPTH      (4)
 ) read_fifo (
-  .clk         (clk),
-  .rst         (!resetn),
-  .push_data   (cache_read_addr),
-  .push        (cache_read_valid),
-  .ready       (rf_ready),
-  .pop_data    (rf_data_out),
-  .valid       (rf_valid),
-  .pop         (rf_pop)
+  .clk_i    (clk),
+  .rst_ni   (resetn),
+  .data_i   (cache_read_addr),
+  .push_i   (cache_read_valid),
+  .ready_o  (rf_ready),
+  .data_o   (rf_data_out),
+  .valid_o  (rf_valid),
+  .pop_i    (rf_pop),
+  .usage_o  ()
 );
 
 assign req_push = wf_pop | rf_pop;
@@ -91,18 +93,19 @@ assign req_pop  = nat_request_valid & nat_request_ready;
 assign req_data_in[DATA_WIDTH+ADDR_WIDTH]               = (wf_pop) ? 1                                               : (rf_pop) ? 0           : 0;
 assign req_data_in[DATA_WIDTH+ADDR_WIDTH-1:DATA_WIDTH]  = (wf_pop) ? wf_data_out[DATA_WIDTH+ADDR_WIDTH-1:DATA_WIDTH] : (rf_pop) ? rf_data_out : rf_data_out;
 assign req_data_in[DATA_WIDTH-1:0]                      = (wf_pop) ? wf_data_out[DATA_WIDTH-1:0]                     : (rf_pop) ? 0           : 0;
-fifo_duth # (
-  .DW   (DATA_WIDTH+ADDR_WIDTH+1),
-  .DEPTH(4)
-  ) request_fifo (
-  .clk         (clk),
-  .rst         (!resetn),
-  .push_data   (req_data_in),
-  .push        (req_push),
-  .ready       (req_ready),
-  .pop_data    (req_data_out),
-  .valid       (req_valid),
-  .pop         (req_pop)
+simple_fifo #(
+  .DATA_WIDTH (DATA_WIDTH+ADDR_WIDTH+1),
+  .DEPTH      (4)
+) request_fifo (
+  .clk_i    (clk),
+  .rst_ni   (resetn),
+  .data_i   (req_data_in),
+  .push_i   (req_push),
+  .ready_o  (req_ready),
+  .data_o   (req_data_out),
+  .valid_o  (req_valid),
+  .pop_i    (req_pop),
+  .usage_o  ()
 );
 
 always_comb begin : axi
@@ -137,18 +140,19 @@ assign upd_push    = nat_update_valid & nat_update_ready;
 assign upd_pop     = upd_valid;
 assign upd_data_in = {nat_update_data, address_keep};
 
-fifo_duth # (
-  .DW   (DATA_WIDTH+ADDR_WIDTH),
-  .DEPTH(4)
-) return_fifo (  
-  .clk        (clk),
-  .rst        (!resetn),
-  .push_data  (upd_data_in),
-  .push       (upd_push),
-  .ready      (upd_ready),
-  .pop_data   (upd_data_out),
-  .valid      (upd_valid),
-  .pop        (upd_pop)
+simple_fifo #(
+  .DATA_WIDTH (DATA_WIDTH+ADDR_WIDTH),
+  .DEPTH      (4)
+) return_fifo (
+  .clk_i    (clk),
+  .rst_ni   (resetn),
+  .data_i   (upd_data_in),
+  .push_i   (upd_push),
+  .ready_o  (upd_ready),
+  .data_o   (upd_data_out),
+  .valid_o  (upd_valid),
+  .pop_i    (upd_pop),
+  .usage_o  ()
 );
 
 assign nat_request_valid = req_valid & ~addr_keep_flag;
