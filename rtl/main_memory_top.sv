@@ -1,3 +1,5 @@
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
@@ -153,7 +155,7 @@ main_memory #(
 generate
   if (USE_AXI) begin
 
-    AXI4_slave # (
+    axi4_slave # (
       .ID_W       (ID_W),
       .ADDR_W     (ADDR_W),
       .AXI_DW     (AXI_DW),
@@ -202,7 +204,7 @@ generate
       .s_axi_rready_i   (ic_s_axi_rready)
     );
     
-    AXI4_slave # (
+    axi4_slave # (
       .ID_W       (ID_W),
       .ADDR_W     (ADDR_W),
       .AXI_DW     (AXI_DW),

@@ -1,3 +1,5 @@
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif

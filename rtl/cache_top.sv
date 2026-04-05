@@ -1,3 +1,5 @@
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
@@ -243,9 +245,9 @@ generate
       .clk(clk),
       .resetn(resetn),
       // cache side
-      .cache_write_valid    ('d0),
-      .cache_write_addr     ('d0),
-      .cache_write_data     ('d0),
+      .cache_write_valid    ('0),
+      .cache_write_addr     ('0),
+      .cache_write_data     ('0),
       .cache_read_valid     (ic_to_nat_valid_o),
       .cache_read_addr      (ic_to_nat_address_o),
       .cache_update_valid   (ic_to_nat_valid_i),
@@ -262,7 +264,7 @@ generate
       .nat_update_data      (ic_nat_to_axi_upd_data)
     );
 
-    AXI4_master # (
+    axi4_master # (
       .LS_DATA_WIDTH    (IC_DW),
       .ADDR_WIDTH       (ADDR_BITS),
       .DATA_WIDTH       (AXI_DW),
@@ -337,7 +339,7 @@ generate
       .nat_update_data      (dc_nat_to_axi_upd_data)
     );
 
-    AXI4_master # (
+    axi4_master # (
       .LS_DATA_WIDTH        (256),
       .ADDR_WIDTH           (32),
       .DATA_WIDTH           (32),
@@ -388,66 +390,66 @@ generate
       .RREADY               (dc_m_axi_rready)
     );
 
-    assign valid_out = 1'd0;
-    assign address_out = '{default: 'd0};
-    assign write_l2_valid = 1'd0;
-    assign write_l2_addr = '{default: 'd0};
-    assign write_l2_data = '{default: 'd0};
+    assign valid_out        = 1'd0;
+    assign address_out      = '{default: 'd0};
+    assign write_l2_valid   = 1'd0;
+    assign write_l2_addr    = '{default: 'd0};
+    assign write_l2_data    = '{default: 'd0};
     assign request_l2_valid = 1'd0;
-    assign request_l2_addr = '{default: 'd0};
+    assign request_l2_addr  = '{default: 'd0};
 
   end else begin
 
-    assign valid_out = ic_to_nat_valid_o;
-    assign address_out = ic_to_nat_address_o;
-    assign ic_to_nat_valid_i = ready_in; 
-    assign ic_to_nat_data_i = data_in;
+    assign valid_out              = ic_to_nat_valid_o;
+    assign address_out            = ic_to_nat_address_o;
+    assign ic_to_nat_valid_i      = ready_in; 
+    assign ic_to_nat_data_i       = data_in;
 
-    assign write_l2_valid = dc_to_nat_store_valid;
-    assign write_l2_addr = dc_to_nat_store_addr;
-    assign write_l2_data = dc_to_nat_store_data;
-    assign request_l2_valid = dc_to_nat_load_valid;
-    assign request_l2_addr = dc_to_nat_load_addr;
+    assign write_l2_valid         = dc_to_nat_store_valid;
+    assign write_l2_addr          = dc_to_nat_store_addr;
+    assign write_l2_data          = dc_to_nat_store_data;
+    assign request_l2_valid       = dc_to_nat_load_valid;
+    assign request_l2_addr        = dc_to_nat_load_addr;
     assign dc_to_nat_update_valid = update_l2_valid;
-    assign dc_to_nat_update_addr = update_l2_addr;
-    assign dc_to_nat_update_data = update_l2_data;
+    assign dc_to_nat_update_addr  = update_l2_addr;
+    assign dc_to_nat_update_data  = update_l2_data;
 
-    assign ic_axi_awvalid = 1'd0;
-    assign ic_axi_awaddr = '{default: 'd0};
-    assign ic_axi_awburst = 2'd0;
-    assign ic_axi_awlen = 8'd0;
-    assign ic_axi_awsize = 3'd0;
-    assign ic_axi_awid = 4'd0;
-    assign ic_axi_wvalid = 1'd0;
-    assign ic_axi_wdata = '{default: 'd0};
-    assign ic_axi_wlast = 1'd0;
-    assign ic_axi_wstrb = 4'd0;
-    assign ic_axi_bready = 1'd0;
-    assign ic_axi_arvalid = 1'd0;
-    assign ic_axi_araddr = '{default: 'd0};
-    assign ic_axi_arburst = 2'd0;
-    assign ic_axi_arlen = 8'd0;
-    assign ic_axi_arsize = 3'd0;
-    assign ic_axi_arid = 4'd0;
-    assign ic_axi_rready = 1'd0;
-    assign dc_axi_awvalid = 1'd0;
-    assign dc_axi_awaddr = '{default: 'd0};
-    assign dc_axi_awburst = 2'd0;
-    assign dc_axi_awlen = 8'd0;
-    assign dc_axi_awsize = 3'd0;
-    assign dc_axi_awid = 4'd0;
-    assign dc_axi_wvalid = 1'd0;
-    assign dc_axi_wdata = '{default: 'd0};
-    assign dc_axi_wlast = 1'd0;
-    assign dc_axi_wstrb = 4'd0;
-    assign dc_axi_bready = 1'd0;
-    assign dc_axi_arvalid = 1'd0;
-    assign dc_axi_araddr = '{default: 'd0};
-    assign dc_axi_arburst = 2'd0;
-    assign dc_axi_arlen = 7'd0;
-    assign dc_axi_arsize = 3'd0;
-    assign dc_axi_arid = 4'd0;
-    assign dc_axi_rready = 1'd0;
+    assign ic_axi_awvalid         = 1'd0;
+    assign ic_axi_awaddr          = '{default: 'd0};
+    assign ic_axi_awburst         = 2'd0;
+    assign ic_axi_awlen           = 8'd0;
+    assign ic_axi_awsize          = 3'd0;
+    assign ic_axi_awid            = 4'd0;
+    assign ic_axi_wvalid          = 1'd0;
+    assign ic_axi_wdata           = '{default: 'd0};
+    assign ic_axi_wlast           = 1'd0;
+    assign ic_axi_wstrb           = 4'd0;
+    assign ic_axi_bready          = 1'd0;
+    assign ic_axi_arvalid         = 1'd0;
+    assign ic_axi_araddr          = '{default: 'd0};
+    assign ic_axi_arburst         = 2'd0;
+    assign ic_axi_arlen           = 8'd0;
+    assign ic_axi_arsize          = 3'd0;
+    assign ic_axi_arid            = 4'd0;
+    assign ic_axi_rready          = 1'd0;
+    assign dc_axi_awvalid         = 1'd0;
+    assign dc_axi_awaddr          = '{default: 'd0};
+    assign dc_axi_awburst         = 2'd0;
+    assign dc_axi_awlen           = 8'd0;
+    assign dc_axi_awsize          = 3'd0;
+    assign dc_axi_awid            = 4'd0;
+    assign dc_axi_wvalid          = 1'd0;
+    assign dc_axi_wdata           = '{default: 'd0};
+    assign dc_axi_wlast           = 1'd0;
+    assign dc_axi_wstrb           = 4'd0;
+    assign dc_axi_bready          = 1'd0;
+    assign dc_axi_arvalid         = 1'd0;
+    assign dc_axi_araddr          = '{default: 'd0};
+    assign dc_axi_arburst         = 2'd0;
+    assign dc_axi_arlen           = 7'd0;
+    assign dc_axi_arsize          = 3'd0;
+    assign dc_axi_arid            = 4'd0;
+    assign dc_axi_rready          = 1'd0;
   end
 endgenerate
 

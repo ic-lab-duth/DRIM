@@ -1,7 +1,9 @@
 /**
 *@info top module
 *@info Sub-Modules: processor_top.sv, main_memory.sv
-*
+
+*@author VLSI Lab, EE dept., Democritus University of Thrace
+
 *
 * @brief Initializes the Processor and the main memory controller, and connects them
 *

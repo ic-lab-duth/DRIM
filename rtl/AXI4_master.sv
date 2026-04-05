@@ -4,12 +4,12 @@
 //! This master has to wait until it gets a response for the latest write transaction to initialize another request.
 
 //! @title Simple valid.ready to AXI4 Master
-//! @author Giorgos Pelekidis
+//! @author VLSI Lab, EE dept., Democritus University of Thrace
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
  
-module AXI4_master #(
+module axi4_master #(
   parameter ID_SEL        = 0,    //! Master's ID
   parameter ID_WIDTH      = 4,    //! Number of Transaction ID bits
   parameter ADDR_WIDTH    = 32,   //! Number of Address bits  

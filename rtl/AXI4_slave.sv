@@ -1,9 +1,11 @@
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 // Only incremented bursts are implemented
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
 
-module AXI4_slave #(
+module axi4_slave #(
   parameter ID_W      = 4,
   parameter ADDR_W    = 32,
   parameter AXI_DW    = 32,

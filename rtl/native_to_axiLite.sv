@@ -1,8 +1,10 @@
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
  
-module native_to_axiLite # (
+module native_to_axilite # (
   parameter ADDR_BITS     = 32,  // default: 32
   parameter DATA_WIDTH    = 32,  // default: 32
   parameter R_WIDTH       = 6,   // default: 6

@@ -1,3 +1,5 @@
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 `ifndef __ENUMS_SV__
 `define __ENUMS_SV__
 //Used for Debugging Purposes

@@ -4,8 +4,8 @@
 //! This master has to wait until it gets a response for the latest write transaction to initialize another request.
 
 //! @title Simple valid.ready to AXI4 Master with CDC FIFOs
-//! @author Giorgos Pelekidis
-//! @author Ioannis Dingolis
+//! @author VLSI Lab, EE dept., Democritus University of Thrace
+
 
 // Instructions on how to use CDC FIFOs: Read description from file cdc_fifo_gray.sv
 // Reset mechanism for CDC FIFOs needs to be implemented correctly.
@@ -18,7 +18,7 @@
 `ifdef MODEL_TECH
     `include "structs.sv"
 `endif
-module AXI4_master_cdc #(
+module axi4_master_cdc #(
   parameter ID_SEL        = 0,    //! Master's ID
   parameter ID_WIDTH      = 4,    //! Number of Transaction ID bits
   parameter ADDR_WIDTH    = 32,   //! Number of Address bits  

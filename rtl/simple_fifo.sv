@@ -7,8 +7,9 @@
 // OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-// Authors:
-// - Ioannis Dingolis <ioanding@ee.duth.gr>
+
+/// @author VLSI Lab, EE dept., Democritus University of Thrace
+
 
 // simple fifo with depth > 0 
 

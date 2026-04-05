@@ -32,10 +32,10 @@
 
 ../rtl/main_memory_top.sv
 ../rtl/cache_top.sv
-../rtl/AXI4_master.sv
-../rtl/AXI4_slave.sv
+../rtl/axi4_master.sv
+../rtl/axi4_slave.sv
 ../rtl/cache_to_native.sv
-../rtl/native_to_axiLite.sv
+../rtl/native_to_axilite.sv
 
 ../rtl/arbiter.sv
 ../rtl/and_or_mux.sv

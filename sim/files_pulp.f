@@ -13,4 +13,4 @@
 ../rtl/pulp/rstgen.sv
 ../rtl/pulp/cdc_fifo_gray.sv
 
-../rtl/AXI4_master_cdc.sv
+../rtl/axi4_master_cdc.sv
